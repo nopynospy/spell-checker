@@ -10,6 +10,7 @@ nltk = "*"
 requests = "*"
 jupyter = "*"
 python-dotenv = "*"
+pyqt5 = "*"
 
 [dev-packages]
 
