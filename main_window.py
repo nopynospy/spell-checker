@@ -23,9 +23,10 @@ class MainWindow(QWidget):
         # The first frame on top will be text area. Add title and text area
         self.inputLayout = QVBoxLayout()
         self.inputLayout.addWidget(QLabel("<h1>Welcome to test</h1>"))
-        self.textedit = QTextEdit()
-        self.textedit.setPlainText(self.userInputText)
+        self.textedit = QPlainTextEdit()
+        self.textedit.setPlainText("")
         self.textedit.textChanged.connect(self.textUpdateEvt)
+        self.textedit.cursorPositionChanged.connect(self.cursorUpdateEvt)
         self.editCursor = QTextCursor(self.textedit.textCursor())
         self.inputLayout.addWidget(self.textedit)
 
@@ -34,17 +35,15 @@ class MainWindow(QWidget):
         self.inputLayout.addWidget(self.inputOptions)
         self.inputOptionsLayout = QHBoxLayout()
 
-        # Button: copy from clipboard
-        self.copyBtn = QPushButton()
-        self.copyBtn.setText("Copy from clipboard")
-        self.copyBtn.clicked.connect(self.copyBtnEvt)
-        self.inputOptionsLayout.addWidget(self.copyBtn)
+        # Button: Save as txt file
+        self.saveTxtBtn = QPushButton()
+        self.saveTxtBtn.setText("Save as text file")
+        self.inputOptionsLayout.addWidget(self.saveTxtBtn)
 
-        # Button: paste to clipboard
-        self.pasteBtn = QPushButton()
-        self.pasteBtn.setText("Paste to clipboard")
-        self.pasteBtn.clicked.connect(self.pasteBtnEvt)
-        self.inputOptionsLayout.addWidget(self.pasteBtn)
+        # Button: Save as Word document
+        self.saveWordBtn = QPushButton()
+        self.saveWordBtn.setText("Save as Word file")
+        self.inputOptionsLayout.addWidget(self.saveWordBtn)
 
         # Button: clear text area
         self.clearBtn = QPushButton()
@@ -53,10 +52,10 @@ class MainWindow(QWidget):
         self.inputOptionsLayout.addWidget(self.clearBtn)
 
         # Label: keep track of word numbers in text area
-        wordCountLabel = QLabel()
-        wordCountLabel.setText("0/500 words")
-        wordCountLabel.setAlignment(Qt.AlignCenter)
-        self.inputOptionsLayout.addWidget(wordCountLabel)
+        self.wordCountLabel = QLabel()
+        self.wordCountLabel.setText("0/500 words")
+        self.wordCountLabel.setAlignment(Qt.AlignCenter)
+        self.inputOptionsLayout.addWidget(self.wordCountLabel)
 
         # Set layouts of both first main frame and the frame in the first main frame
         self.inputOptions.setLayout(self.inputOptionsLayout)
@@ -75,35 +74,30 @@ class MainWindow(QWidget):
         self.setWindowTitle('Test')
         self.show()
 
-    # Function to update text edit
-    def updateTextEdit(self):
-        self.textedit.setPlainText(self.userInputText)
-
-    # Function to paste text from clipboard
-    def pasteBtnEvt(self):
-        win32clipboard.OpenClipboard()
-        index = self.getEditCursor().position()
-        self.userInputText = self.userInputText[:index] + 'Fu ' + self.userInputText[index:]
-        self.updateTextEdit()
-        win32clipboard.CloseClipboard()
-
-    # Function to copy text to clipboard
-    def copyBtnEvt(self):
-        win32clipboard.OpenClipboard()
-        win32clipboard.EmptyClipboard()
-        win32clipboard.SetClipboardText(self.userInputText)
-        win32clipboard.CloseClipboard()
-
     # Function to clear text edit
     def clearBtnEvt(self):
-        self.userInputText = ""
+        self.textedit.setPlainText("")
         self.textedit.clear()
 
+    # Function to watch for new keyboard entries
     def textUpdateEvt(self):
         print(self.textedit.toPlainText())
+        self.updateWordCount()
+    
+    # Function to update word count
+    def updateWordCount(self):
+        newCount = str(len(self.textedit.toPlainText().split())) + "/500words"
+        self.wordCountLabel.setText(newCount)
 
+    # Function to get text edit cursor
     def getEditCursor(self):
         return self.textedit.textCursor()
+
+    # Function to watch for cursor position changes
+    def cursorUpdateEvt(self):
+        index = self.getEditCursor().position() - 1
+        current = self.textedit.toPlainText()
+        print(current[index])
 
 # Call the main window class and maximize its view
 def main():
