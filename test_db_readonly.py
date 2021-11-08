@@ -16,15 +16,3 @@ mydoc = mycol.find(myquery)
 
 for x in mydoc:
   print(x)
-
-# mylist = [
-#   { "word": "for"},
-#   { "word": "and"},
-#   { "word": "nor"},
-#   { "word": "but"},
-#   { "word": "or"},
-#   { "word": "yet"},
-#   { "word": "so"},
-# ]
-
-# x = mycol.insert_many(mylist)
