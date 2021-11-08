@@ -13,6 +13,7 @@ python-dotenv = "*"
 pyqt5 = "*"
 bs4 = "*"
 bioc = "*"
+eel = "*"
 
 [dev-packages]
 

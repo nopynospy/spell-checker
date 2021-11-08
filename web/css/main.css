@@ -1,0 +1,15 @@
+  #input_box {
+    font-size: 20px;
+  }
+
+  #suggestArea {
+    position: fixed;
+    top: 300px;
+    left: 0px;
+    display: none;
+    border: solid 1px gray;
+  }
+
+  .suggestions {
+    margin: 5px 2px;
+  }
