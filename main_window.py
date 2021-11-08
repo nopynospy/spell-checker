@@ -2,7 +2,6 @@ import sys
 from PyQt5.QtGui import *
 from PyQt5.QtCore import *
 from PyQt5.QtWidgets import *
-import win32clipboard
 
 class MainWindow(QWidget):
 
@@ -20,17 +19,11 @@ class MainWindow(QWidget):
         self.suggestFrame = QFrame()
         self.suggestFrame.setFrameShape(QFrame.StyledPanel)
 
-        # The first frame on top will be text area. Add title and text area
+        # The first frame on top will be text area for user input. Add title.
         self.inputLayout = QVBoxLayout()
         self.inputLayout.addWidget(QLabel("<h1>Welcome to test</h1>"))
-        self.textedit = QPlainTextEdit()
-        self.textedit.setPlainText("")
-        self.textedit.textChanged.connect(self.textUpdateEvt)
-        self.textedit.cursorPositionChanged.connect(self.cursorUpdateEvt)
-        self.editCursor = QTextCursor(self.textedit.textCursor())
-        self.inputLayout.addWidget(self.textedit)
 
-        # Add another frame with horizontal layout under the text area to contain buttons
+        # Add another frame with horizontal layout to contain buttons
         self.inputOptions = QFrame()
         self.inputLayout.addWidget(self.inputOptions)
         self.inputOptionsLayout = QHBoxLayout()
@@ -38,6 +31,7 @@ class MainWindow(QWidget):
         # Button: Save as txt file
         self.saveTxtBtn = QPushButton()
         self.saveTxtBtn.setText("Save as text file")
+        self.saveTxtBtn.clicked.connect(self.saveTxtBtnEvt)
         self.inputOptionsLayout.addWidget(self.saveTxtBtn)
 
         # Button: Save as Word document
@@ -57,6 +51,15 @@ class MainWindow(QWidget):
         self.wordCountLabel.setAlignment(Qt.AlignCenter)
         self.inputOptionsLayout.addWidget(self.wordCountLabel)
 
+        # PlainTextEdit: Add text area, which only allows plain text and not for rich text editing
+        self.textedit = QPlainTextEdit()
+        self.textedit.setPlainText("")
+        self.textedit.textChanged.connect(self.textUpdateEvt)
+        self.textedit.cursorPositionChanged.connect(self.cursorUpdateEvt)
+        self.textedit.zoomIn(4)
+        self.editCursor = QTextCursor(self.textedit.textCursor())
+        self.inputLayout.addWidget(self.textedit)
+
         # Set layouts of both first main frame and the frame in the first main frame
         self.inputOptions.setLayout(self.inputOptionsLayout)
         self.inputFrame.setLayout(self.inputLayout)
@@ -75,8 +78,17 @@ class MainWindow(QWidget):
         self.show()
 
     # Function to clear text edit
+    def saveTxtBtnEvt(self):
+        fileName, _ = QFileDialog.getSaveFileName(None,"QFileDialog.getOpenFileName()", "","Text File (*.txt)")
+        with open(fileName, 'w') as file:
+            file.write(self.textedit.toPlainText())
+
+    # Function to clear text edit
+    def saveWordBtnEvt(self):
+        self.textedit.clear()
+
+    # Function to clear text edit
     def clearBtnEvt(self):
-        self.textedit.setPlainText("")
         self.textedit.clear()
 
     # Function to watch for new keyboard entries
@@ -95,9 +107,10 @@ class MainWindow(QWidget):
 
     # Function to watch for cursor position changes
     def cursorUpdateEvt(self):
-        index = self.getEditCursor().position() - 1
-        current = self.textedit.toPlainText()
-        print(current[index])
+        if len(self.textedit.toPlainText()) > 0:
+            index = self.getEditCursor().position() - 1
+            current = self.textedit.toPlainText()
+            print(current[index])
 
 # Call the main window class and maximize its view
 def main():
