@@ -11,6 +11,7 @@ requests = "*"
 jupyter = "*"
 python-dotenv = "*"
 pyqt5 = "*"
+bs4 = "*"
 
 [dev-packages]
 
