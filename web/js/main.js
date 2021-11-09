@@ -10,10 +10,6 @@ let mouse = {
     x: 0,
     y: 0
   },
-  upedPos: {
-    x: 0,
-    y: 0
-  },
 }
 
 // https://stackoverflow.com/questions/26551428/get-the-mouse-position-in-mousedown-and-mousemove-events
@@ -21,7 +17,7 @@ mouse.getPosition = function(element, evt) {
   var rect = element.getBoundingClientRect(),
     root = document.documentElement;
   this.position.x = evt.clientX - root.scrollLeft;
-  this.position.y = evt.clientY - root.scrollTop;
+  this.position.y = evt.clientY + 20;
   return this.position;
 }
 
@@ -36,8 +32,21 @@ textarea.addEventListener("mousedown", function(e) {
   eel.get_candidates()
 });
 
+textarea.addEventListener("scroll", function(e) {
+  suggestArea.style.display = "none";
+});
+
+// https://stackoverflow.com/questions/5570390/resize-event-for-textarea
+function outputsize() {
+  suggestArea.style.display = "none";
+ }
+ outputsize()
+ 
+ new MutationObserver(outputsize).observe(textarea, {
+  attributes: true, attributeFilter: [ "style" ]
+ })
+
 const WORD_REGEX = /([^\s]+)/g
-let currentCursor = 0
 
 textarea.addEventListener('keydown', check_words);
 textarea.addEventListener('keyup', check_words);
@@ -83,9 +92,12 @@ textarea.addEventListener('select', checkCursor); // Some browsers support this 
 textarea.addEventListener('selectstart', checkCursor); // Some browsers support this event
 
 function checkCursor(){
-  currentCursor = textarea.selectionStart
   console.log(textarea.selectionStart)
-  console.log(textarea.selectionEnd)
+  // suggestArea.style.top = (textarea.selectionStart / textarea.rows) + "px";
+  // suggestArea.style.left = ((textarea.selectionStart % textarea.rows)*20) + "px";
+  // console.log(suggestArea.style.left)
+  // suggestArea.style.display = "block";
+  // eel.get_candidates()
 };
 
 document.getElementById("clearBtn").addEventListener("click", ()=>{
@@ -111,10 +123,15 @@ function return_candidates(candidates) {
     new_btn.innerText = candidate["word"];
     new_btn.className = "suggestions";
     new_btn.onclick = function(){
-      console.log(candidate["distance"]);
       let val = textarea.value
-      textarea.value = val.substr(0, currentCursor) + candidate["word"] +
-                       val.substr(currentCursor);
+      let new_cursor_pos = textarea.selectionStart + candidate["word"].length
+      textarea.value = val.substr(0, textarea.selectionStart) + candidate["word"] +
+                       val.substr(textarea.selectionStart);
+      
+      // textarea.setSelectionRange(new_cursor_pos, new_cursor_pos);
+      textarea.selectionStart = new_cursor_pos;
+      textarea.selectionEnd = new_cursor_pos;
+      console.log("new", textarea.selectionStart)
     };
     suggestArea.appendChild(new_btn);
   });

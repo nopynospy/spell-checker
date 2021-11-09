@@ -17,6 +17,11 @@ def get_candidates():
             {"word": "old", "distance": 7},
             {"word": "new", "distance": 7},
             {"word": "past", "distance": 13},
+            {"word": "car", "distance": 15},
+            {"word": "house", "distance": 11},
+            {"word": "old", "distance": 7},
+            {"word": "new", "distance": 7},
+            {"word": "past", "distance": 13},
         ])
 
 eel.start('index.html')

@@ -9,16 +9,19 @@
     <script type="text/javascript" src="/eel.js"></script> 
 </head>
 <body>
-    <h1>Welcome to Steamboat Spellchecker!</h1>
-    <textarea id="input_box" rows="15" cols="100" spellcheck="false">
-        
-    </textarea>
+    <h1 class="heading">Welcome to Steamboat Spellchecker!</h1>
+    <div class="center_container">
+        <textarea id="input_box" rows="15" cols="100" spellcheck="false"></textarea>
+    </div>
     <br>
     <br>
-    <button id="txtBtn">Save as text file</button>
-    <button id="wordBtn">Save as word file</button>
-    <button id="clearBtn">Clear text</button>
-    <span><span id="wordnum">0</span>/500 words</span>
+    <div class="center_container">
+        <button id="copyBtn">Copy text</button>
+        <button id="txtBtn">Save as text file</button>
+        <button id="clearBtn">Clear text</button>
+        <span><span id="wordnum">0</span>/500 words</span>
+    </div>
+
 
     <div id="suggestArea">
 
