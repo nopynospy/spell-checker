@@ -9,21 +9,22 @@
     <script type="text/javascript" src="/eel.js"></script> 
 </head>
 <body>
-    <h1 class="heading">Welcome to Steamboat Spellchecker!</h1>
-    <div  class="center_container">
-        <textarea id="textArea" cols="100" rows="20"></textarea>
+    <h1>Welcome to Steamboat Spellchecker!</h1>
+    <div id="textAreaContainer">
+        <textarea id="textArea" cols="100"></textarea>
         <div id="textAreaMirror">
             <span id="textareaMirrorInline"></span>
+        </div>
+        <div class="center_container" id="btn_container">
+            <button id="copyBtn">Copy text</button>
+            <button id="txtBtn">Save as text file</button>
+            <button id="clearBtn">Clear text</button>
+            <span><span id="wordnum">0</span>/500 words</span>
         </div>
     </div>
     <br>
     <br>
-    <div class="center_container" id="btn_container">
-        <button id="copyBtn">Copy text</button>
-        <button id="txtBtn">Save as text file</button>
-        <button id="clearBtn">Clear text</button>
-        <span><span id="wordnum">0</span>/500 words</span>
-    </div>
+
     <div id="suggestArea"></div>
 </body>
 <script src="js/main.js"></script>

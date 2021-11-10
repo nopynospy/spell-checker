@@ -1,5 +1,4 @@
 let suggestArea = document.getElementById('suggestArea');
-let textareaMirrorInline = document.getElementById('textareaMirrorInline');
 
 let mouse = {
   position: {
@@ -18,7 +17,7 @@ mouse.getPosition = function(element, evt) {
   var rect = element.getBoundingClientRect(),
     root = document.documentElement;
   this.position.x = evt.clientX - root.scrollLeft;
-  this.position.y = evt.clientY + 20;
+  this.position.y = evt.clientY;
   return this.position;
 }
 
@@ -27,25 +26,23 @@ let textarea = document.getElementById('textArea');
 textarea.addEventListener("mousedown", function(e) {
   mouse.down = true;
   mouse.downedPos = mouse.getPosition(this, e);
-  suggestArea.style.top = mouse.downedPos.y + "px";
-  suggestArea.style.left = mouse.downedPos.x + "px";
-  suggestArea.style.display = "block";
-  eel.get_candidates()
+  let currentText = textarea.value.replace(/(?:\r\n|\r|\n)/g, '<br>');;
+  textareaMirrorInline.innerHTML = currentText;
+  let rect = textareaMirrorInline.getBoundingClientRect();
+  if (mouse.downedPos.y > rect.top
+    && mouse.downedPos.y < rect.bottom
+    && mouse.downedPos.x > rect.left
+    && mouse.downedPos.x < rect.right) {
+      suggestArea.style.top = mouse.downedPos.y + "px";
+      suggestArea.style.left = mouse.downedPos.x + "px";
+      suggestArea.style.display = "block";
+      eel.get_candidates()
+    }
 });
 
 textarea.addEventListener("scroll", function(e) {
   suggestArea.style.display = "none";
 });
-
-// https://stackoverflow.com/questions/5570390/resize-event-for-textarea
-function textareaResizeEvt() {
-  suggestArea.style.display = "none";
- }
- textareaResizeEvt()
- 
- new MutationObserver(textareaResizeEvt).observe(textarea, {
-  attributes: true, attributeFilter: [ "style" ]
- })
 
 const WORD_REGEX = /([^\s]+)/g
 
@@ -92,17 +89,22 @@ textarea.addEventListener('mousemove', checkCursor); // Selection, dragging text
 textarea.addEventListener('select', checkCursor); // Some browsers support this event
 textarea.addEventListener('selectstart', checkCursor); // Some browsers support this event
 
+let textareaMirror = document.getElementById('textAreaMirror');
+let textareaMirrorInline = document.getElementById('textareaMirrorInline');
+
+textareaMirror.style.width = textarea.clientWidth + "px";
+textareaMirror.style.height = textarea.clientHeight + "px";
+textareaMirror.style.position = "absolute";
+textareaMirror.style.top = 0;
+textareaMirror.style.left = 0;
+textareaMirror.style.textAlign = "left";
+textareaMirror.style.overflowY = "hidden";
+textareaMirror.style.background = "transparent";
+textareaMirror.style.margin = 0;
+
 function checkCursor(){
-  console.log(textarea.selectionStart)
-  // textareaMirrorInline.innerHTML = textarea.value.substr(0, textarea.selectionStart).replace(/\n$/, "\n\001");
-  // var rects = textareaMirrorInline.getClientRects(),
-  //     lastRect = rects[rects.length - 1],
-  //     top = lastRect.top - textarea.scrollTop + 30,
-  //     left = lastRect.left + lastRect.width;
-  // suggestArea.style.top = top + "px";
-  // suggestArea.style.left = left + "px";
-  // suggestArea.style.display = "block";
-  // eel.get_candidates()
+  let currentText = textarea.value.replace(/(?:\r\n|\r|\n)/g, '<br>');;
+  textareaMirrorInline.innerHTML = currentText;
 };
 
 document.getElementById("clearBtn").addEventListener("click", ()=>{
