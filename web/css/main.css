@@ -34,6 +34,43 @@
 
 .center_container {
   text-align: center;
+  position: relative;
+}
+
+#textArea, #textareaMirrorInline {
+  font:monospace;
+  font-size: 20px;
+  /* background:transparent;
+  width:70vw;
+  max-width:70vw;
+  height: 60vh;
+  min-height:60vh;
+  position:absolute;
+  top: 0;
+  left: 0;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  padding:5px;
+  margin:0;
+  background:transparent; */
+}
+
+#textArea {
+  font:monospace;
+  z-index:1;
+  /* resize: none; */
+  font-size: 20px;
+}
+
+#textAreaMirror {
+  /* border-color:transparent; */
+  z-index: -1;
+  /* border: solid 1px black; */
+}
+
+#textareaMirrorInline {
+  /* border: solid 1px black; */
+  /* opacity: 0; */
 }
 
 button {
@@ -53,21 +90,24 @@ button:hover {
   background-color: gray;
   color: white;
 }
-  
-#input_box {
-  font-size: 20px;
-}
 
 #suggestArea {
   position: fixed;
-  top: 300px;
+  top: 0px;
   left: 0px;
   display: none;
   border: solid 1px gray;
   background-color: white;
-  width: 30vw;
+  max-width: 30vw;
   height: 50px;
   overflow: scroll;
+  word-wrap: break-word;
+  z-index:3;
+}
+
+#btn_container {
+  position: absolute;
+  bottom: 0;
 }
 
 .suggestions {

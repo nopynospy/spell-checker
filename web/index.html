@@ -10,22 +10,21 @@
 </head>
 <body>
     <h1 class="heading">Welcome to Steamboat Spellchecker!</h1>
-    <div class="center_container">
-        <textarea id="input_box" rows="15" cols="100" spellcheck="false"></textarea>
+    <div  class="center_container">
+        <textarea id="textArea" cols="100" rows="20"></textarea>
+        <div id="textAreaMirror">
+            <span id="textareaMirrorInline"></span>
+        </div>
     </div>
     <br>
     <br>
-    <div class="center_container">
+    <div class="center_container" id="btn_container">
         <button id="copyBtn">Copy text</button>
         <button id="txtBtn">Save as text file</button>
         <button id="clearBtn">Clear text</button>
         <span><span id="wordnum">0</span>/500 words</span>
     </div>
-
-
-    <div id="suggestArea">
-
-    </div>
+    <div id="suggestArea"></div>
 </body>
 <script src="js/main.js"></script>
 </html>

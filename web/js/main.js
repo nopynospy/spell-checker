@@ -1,4 +1,5 @@
 let suggestArea = document.getElementById('suggestArea');
+let textareaMirrorInline = document.getElementById('textareaMirrorInline');
 
 let mouse = {
   position: {
@@ -21,7 +22,7 @@ mouse.getPosition = function(element, evt) {
   return this.position;
 }
 
-let textarea = document.getElementById('input_box');
+let textarea = document.getElementById('textArea');
 
 textarea.addEventListener("mousedown", function(e) {
   mouse.down = true;
@@ -37,12 +38,12 @@ textarea.addEventListener("scroll", function(e) {
 });
 
 // https://stackoverflow.com/questions/5570390/resize-event-for-textarea
-function outputsize() {
+function textareaResizeEvt() {
   suggestArea.style.display = "none";
  }
- outputsize()
+ textareaResizeEvt()
  
- new MutationObserver(outputsize).observe(textarea, {
+ new MutationObserver(textareaResizeEvt).observe(textarea, {
   attributes: true, attributeFilter: [ "style" ]
  })
 
@@ -93,9 +94,13 @@ textarea.addEventListener('selectstart', checkCursor); // Some browsers support 
 
 function checkCursor(){
   console.log(textarea.selectionStart)
-  // suggestArea.style.top = (textarea.selectionStart / textarea.rows) + "px";
-  // suggestArea.style.left = ((textarea.selectionStart % textarea.rows)*20) + "px";
-  // console.log(suggestArea.style.left)
+  // textareaMirrorInline.innerHTML = textarea.value.substr(0, textarea.selectionStart).replace(/\n$/, "\n\001");
+  // var rects = textareaMirrorInline.getClientRects(),
+  //     lastRect = rects[rects.length - 1],
+  //     top = lastRect.top - textarea.scrollTop + 30,
+  //     left = lastRect.left + lastRect.width;
+  // suggestArea.style.top = top + "px";
+  // suggestArea.style.left = left + "px";
   // suggestArea.style.display = "block";
   // eel.get_candidates()
 };
@@ -124,14 +129,12 @@ function return_candidates(candidates) {
     new_btn.className = "suggestions";
     new_btn.onclick = function(){
       let val = textarea.value
-      let new_cursor_pos = textarea.selectionStart + candidate["word"].length
-      textarea.value = val.substr(0, textarea.selectionStart) + candidate["word"] +
-                       val.substr(textarea.selectionStart);
-      
-      // textarea.setSelectionRange(new_cursor_pos, new_cursor_pos);
-      textarea.selectionStart = new_cursor_pos;
-      textarea.selectionEnd = new_cursor_pos;
-      console.log("new", textarea.selectionStart)
+      let head = val.slice(0, textarea.selectionStart);
+      let new_cursor_pos = head.length + candidate["word"].length + 1
+      textarea.value = head + candidate["word"] + " " + val.slice(textarea.selectionStart);
+      textarea.setSelectionRange(new_cursor_pos, new_cursor_pos);
+      textarea.focus();
+      count_words()
     };
     suggestArea.appendChild(new_btn);
   });
