@@ -38,6 +38,9 @@ textarea.addEventListener("mousedown", function(e) {
       suggestArea.style.display = "block";
       eel.get_candidates()
     }
+    else {
+      suggestArea.style.display = "none";
+    }
 });
 
 textarea.addEventListener("scroll", function(e) {
