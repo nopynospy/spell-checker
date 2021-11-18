@@ -1,7 +1,9 @@
 import eel
 
+# Get web page files from web folder
 eel.init('web')
 
+# Create python functions that can be called by webpage
 @eel.expose
 def get_candidates():
     eel.return_candidates([
@@ -24,4 +26,5 @@ def get_candidates():
             {"word": "cold", "distance": 13},
         ])
 
+# Index.html is where the main UI components are stored
 eel.start('index.html')
