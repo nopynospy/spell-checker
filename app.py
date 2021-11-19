@@ -26,5 +26,62 @@ def get_candidates():
             {"word": "cold", "distance": 13},
         ])
 
+@eel.expose
+def get_all_words():
+    eel.return_all_words([
+        "dispensable",
+        "romantic",
+        "squirrel",
+        "bolt",
+        "fixed",
+        "winter",
+        "many",
+        "poke",
+        "rhetorical",
+        "linen",
+        "tempt",
+        "transition",
+        "pan",
+        "extraterrestrial",
+        "cane",
+        "plant",
+        "please",
+        "adventure",
+        "computing",
+        "chimney",
+        "corruption",
+        "congress",
+        "language",
+        "prejudice",
+        "lesson",
+        "initial",
+        "parallel",
+        "tool",
+        "rain",
+        "deliver",
+        "distributor",
+        "peak",
+        "fluctuation",
+        "safe",
+        "commemorate",
+        "descent",
+        "settle",
+        "breathe",
+        "radical",
+        "assume",
+        "fine",
+        "mastermind",
+        "first",
+        "conversation",
+        "unlike",
+        "bear",
+        "available",
+        "glare",
+        "guess",
+        "aware",
+        "willpower"
+    ])
+
+
 # Index.html is where the main UI components are stored
 eel.start('index.html')

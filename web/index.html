@@ -11,17 +11,23 @@
 <body>
     <!-- Header of page -->
     <h1>Welcome to Steamboat Spellchecker!</h1>
-    <!-- Section where textarea and buttons are stored -->
-    <div id="textAreaContainer">
-        <textarea id="textArea" cols="100"></textarea>
-        <div id="textAreaMirror">
-            <span id="textareaMirrorInline"></span>
+    <div id="mainArea">
+        <!-- Section where textarea and buttons are stored -->
+        <div id="textAreaContainer">
+            <textarea id="textArea" cols="100"></textarea>
+            <div id="textAreaMirror">
+                <span id="textareaMirrorInline"></span>
+            </div>
+            <div class="center_container" id="btn_container">
+                <button id="copyBtn">Copy text</button>
+                <button id="txtBtn">Save as text file</button>
+                <button id="clearBtn">Clear text</button>
+                <span><span id="wordnum">0</span>/500 words</span>
+            </div>
         </div>
-        <div class="center_container" id="btn_container">
-            <button id="copyBtn">Copy text</button>
-            <button id="txtBtn">Save as text file</button>
-            <button id="clearBtn">Clear text</button>
-            <span><span id="wordnum">0</span>/500 words</span>
+        <div id="dictionaryContainer">
+            <input type="text" placeholder="Search word here" id="searchInput" />
+            <ul id="dictionaryList"></ul>
         </div>
     </div>
     <br>

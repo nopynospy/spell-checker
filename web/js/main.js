@@ -1,5 +1,6 @@
 // Declare variables
 let suggestArea = document.getElementById('suggestArea');
+let dictionaryList = document.getElementById('dictionaryList');
 
 let mouse = {
   position: {
@@ -164,3 +165,16 @@ function return_candidates(candidates) {
     suggestArea.appendChild(new_btn);
   });
 }
+
+eel.expose(return_all_words);
+function return_all_words(words) {
+  dictionaryList.innerHTML = "";
+  words.forEach(function(word) {
+    let new_li= document.createElement("li");
+    new_li.innerText = word;
+    new_li.className = "";
+    dictionaryList.appendChild(new_li);
+  });
+}
+
+eel.get_all_words()

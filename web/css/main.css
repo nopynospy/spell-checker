@@ -1,7 +1,17 @@
+#mainArea {
+  display: flex;
+}
+
 #textAreaContainer {
-  width: 80vw;
+  width: 79vw;
   height: 80vh;
   position: relative;
+  float: left;
+}
+
+#dictionaryContainer {
+  position: relative;
+  border: solid grey;
 }
 
 #textArea, #textareaMirrorInline {
@@ -60,7 +70,20 @@ button:hover {
   z-index: 5;
 }
 
+#btn_container button {
+  border: solid grey;
+}
+
 #btn_container {
   position: absolute;
   bottom: 0;
+}
+
+#dictionaryList {
+  overflow: scroll;
+  height: 80vh;
+}
+
+#searchInput {
+  margin-top: 2px;
 }
