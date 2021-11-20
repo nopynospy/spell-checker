@@ -1,39 +1,49 @@
 <!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Steamboat Spellchecker</title>
+<html>
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Steamboat Spellchecker</title>
+        <link href="css/quill.snow.css" rel="stylesheet">
+        <link rel="stylesheet" href="css/main.css">
+        <script type="text/javascript" src="/eel.js"></script> 
+        </head>
+    <body>
+        <!-- Header of page -->
+        <h1>Welcome to Steamboat Spellchecker!</h1>
+        <div id="body_container">
+            <div id="left_body">
+                <br />
+                <!-- Corpus area -->
+                <div id="dictionaryContainer">
+                    <div id="btn_container">
+                        <span><span id="wordnum">0</span>/500 words</span>
+                        <br>
+                        <button id="txtBtn">Save as text file</button>
+                        <button id="clearBtn">Clear text</button>
+                    </div>
+                    <hr />
+                    <h2>Corpus</h2>
+                    <span>Press enter to search</span>
+                    <input type="text" placeholder="Search word here" id="searchInput" />
+                    <ul id="dictionaryList"></ul>
+                </div>
+            </div>
+            <div id="right_body">
+                <div id="overlay-container">
+                    <!-- Text edit area -->
+                    <div id="editor-container"></div>
+                    <!-- Text suggestion area, which will move according to user action -->
+                    <div id="suggestContainer">
+                        <p id="editorMirror"></p>
+                        <span class="suggestArea" id="suggestArea1"></span>
+                        <span class="suggestArea" id="suggestArea2"></span>
+                    </div>
+                </div>
+            </div>
+        </div>
 
-    <link rel="stylesheet" href="css/main.css">
-    <script type="text/javascript" src="/eel.js"></script> 
-</head>
-<body>
-    <!-- Header of page -->
-    <h1>Welcome to Steamboat Spellchecker!</h1>
-    <div id="mainArea">
-        <!-- Section where textarea and buttons are stored -->
-        <div id="textAreaContainer">
-            <textarea id="textArea" cols="100"></textarea>
-            <div id="textAreaMirror">
-                <span id="textareaMirrorInline"></span>
-            </div>
-            <div class="center_container" id="btn_container">
-                <button id="copyBtn">Copy text</button>
-                <button id="txtBtn">Save as text file</button>
-                <button id="clearBtn">Clear text</button>
-                <span><span id="wordnum">0</span>/500 words</span>
-            </div>
-        </div>
-        <div id="dictionaryContainer">
-            <input type="text" placeholder="Search word here" id="searchInput" />
-            <ul id="dictionaryList"></ul>
-        </div>
-    </div>
-    <br>
-    <br>
-    <!-- Section where spelling suggestions are stored -->
-    <div id="suggestArea"></div>
-</body>
-<script src="js/main.js"></script>
+        <script src="js/quill.js"></script>
+        <script src="js/main.js"></script>
+    </body>
 </html>

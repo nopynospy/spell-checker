@@ -1,89 +1,103 @@
-#mainArea {
-  display: flex;
+h1 {
+    text-align: center;
 }
 
-#textAreaContainer {
-  width: 79vw;
-  height: 80vh;
-  position: relative;
-  float: left;
+#body_container {
+    width: 100%;
 }
 
-#dictionaryContainer {
-  position: relative;
-  border: solid grey;
+#left_body {
+    float: left;
+    width: 250px;
+    background-color: rgb(235, 235, 235);
+    height: 100%;
+    position:fixed;
+    padding-left: 5px;
+    text-align: center;
+    top: 0;
 }
 
-#textArea, #textareaMirrorInline {
-  font:monospace;
-  font:18px/1 monospace;
+#overlay-container {
+    width: 100%;
 }
 
-#textArea {
-  resize: none;
-  position: absolute;
-  top: 0;
-  left: 0;
-  background:transparent;
-  z-index: 2;
-  margin:0;
-  height: 85%;
+#editor-container, #editorMirror {
+    font:monospace;
+    font:18px/1 monospace;
 }
 
-
-#textareaMirrorInline {
-  border: solid 1px black;
-  word-wrap: break-word;
-  overflow-wrap: break-word;
-  opacity: 0;
+#editor-container, #suggestContainer {
+    position:absolute;
+    /* width: 100%; */
+    /* height:85%; */
+    left:320px;
 }
 
-button {
-  background-color: white;
-  border: none;
-  color: black;
-  padding: 5px 2px;
-  text-align: center;
-  text-decoration: none;
-  display: inline-block;
-  font-size: 16px;
-  margin: 4px 2px;
-  cursor: pointer;
+#editor-container {
+    z-index: 10;
+    top:150px;
 }
 
-button:hover {
-  background-color: gray;
-  color: white;
+#suggestContainer {
+    top:180px;
 }
 
-#suggestArea {
-  position: fixed;
-  top: 0px;
-  left: 0px;
-  display: none;
-  border: solid 1px gray;
-  background-color: white;
-  max-width: 30vw;
-  height: 50px;
-  overflow: scroll;
-  word-wrap: break-word;
-  z-index: 5;
+#editorMirror {
+    padding: 18px 15px;
+    tab-size: 4;
+    line-height: 1.42;
+    -moz-tab-size: 4;
+    line-height: 1.42;
+    text-align: justify;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    display: inline;
+    color: transparent;
+    box-sizing: border-box;
 }
 
-#btn_container button {
-  border: solid grey;
+.suggestArea {
+    border: solid 1px gray;
+    background-color: white;
+    max-width: 30vw;
+    height: 50px;
+    overflow: scroll;
+    word-wrap: break-word;
+    position: absolute;
+    opacity: 0;
+    z-index: 25;
 }
 
-#btn_container {
-  position: absolute;
-  bottom: 0;
-}
+::-webkit-input-placeholder {
+    text-align: center;
+ }
+ 
+ :-moz-placeholder { /* Firefox 18- */
+    text-align: center;  
+ }
+ 
+ ::-moz-placeholder {  /* Firefox 19+ */
+    text-align: center;  
+ }
+ 
+ :-ms-input-placeholder {  
+    text-align: center; 
+ }
 
-#dictionaryList {
-  overflow: scroll;
-  height: 80vh;
-}
+ #dictionaryList {
+     overflow-y: scroll;
+     height: 70vh;
+ }
 
-#searchInput {
-  margin-top: 2px;
-}
+ .suggestions {
+    background-color: white;
+    border: none;
+    color: black;
+    padding: 5px 2px;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    font-size: 16px;
+    margin: 4px 2px;
+    cursor: pointer;
+  }
