@@ -32,6 +32,9 @@ const rightBodyWidth = document.body.clientWidth - 310
 let isEditing = false;
 let isWordSelected = false;
 
+let selectionIndex = 0;
+let string_selected
+
 // Function that gets mouse click coordinates on webpage
 // https://stackoverflow.com/questions/26551428/get-the-mouse-position-in-mousedown-and-mousemove-events
 let mouse = {
@@ -56,12 +59,12 @@ mouse.getPosition = function(element, evt) {
 // When the user clicks text edit area, get the mouse click position to show suggestion area
 editorContainer.addEventListener("click", function(e) {
   mouse.downedPos = mouse.getPosition(this, e);
-  if (isEditing && (quill.getLength() > 1)) {
-    suggestArea1.style.top =( mouse.downedPos.y - 150) + "px";
-    suggestArea1.style.left = (mouse.downedPos.x - 260 )+ "px";
-    suggestArea1.style.opacity = 1;
-    suggestArea2.style.opacity = 0;
-  }
+  // if (isEditing && (quill.getLength() > 1)) {
+  //   suggestArea1.style.top =( mouse.downedPos.y - 150) + "px";
+  //   suggestArea1.style.left = (mouse.downedPos.x - 260 )+ "px";
+  //   suggestArea1.style.opacity = 1;
+  //   suggestArea2.style.opacity = 0;
+  // }
 });
 
 // Set the width of editor and suggestion container to not overlap with corpus area
@@ -74,15 +77,18 @@ quill.on('editor-change', function(eventName, range, oldRange) {
     isEditing = false;
     suggestArea1.style.opacity = 0;
     suggestArea2.style.opacity = 1;
+
     eel.get_candidates();
       if (range) {
         // If only one character selected
           if (range.length == 0) {
             isEditing = true;
             console.log('User cursor is on', range.index);
-            let cursor_minus = quill.getText(range.index-1, range.index);
-            console.log("SELECTION", cursor_minus);
-            if (cursor_minus === null || !cursor_minus.replace(/\s/g, '').length) {
+            selectionIndex = range.index
+            string_selected = quill.getText(selectionIndex-1);
+            string_selected = string_selected.charAt(0)
+            console.log("SELECTION", string_selected);
+            if (checkIfSpace(string_selected)) {
               console.log("suggest next word");
               isWordSelected = false;
             } else {
@@ -90,7 +96,8 @@ quill.on('editor-change', function(eventName, range, oldRange) {
               isWordSelected = true;
             }
             count_words(quill.getText());
-            let newestText = quill.getText(0, range.index).replace(/(?:\r\n|\r|\n)/g, '<br>&emsp;');
+            // Insert the line break element to simulate new lines in mirror
+            let newestText = quill.getText(0, selectionIndex).replace(/(?:\r\n|\r|\n)/g, '<br>&emsp;');
             editorMirror.innerHTML = newestText
             let rect = suggestArea1.getBoundingClientRect();
             // console.log("RECT", rect)
@@ -99,7 +106,7 @@ quill.on('editor-change', function(eventName, range, oldRange) {
               editorMirror.innerHTML = newestText
             }
           } else { // if more than one character selected
-            var text = quill.getText(range.index, range.length);
+            var text = quill.getText(selectionIndex, range.length);
             console.log('User has highlighted', text);
           }
         } else { // if user select area outside of text editor
@@ -108,7 +115,12 @@ quill.on('editor-change', function(eventName, range, oldRange) {
   }
 });
 
-  // Update the UI to show new word count
+// Helper function to check if a string is space or line break
+function checkIfSpace(text) {
+  return text === null || !text.replace(/\s/g, '').length
+}
+
+// Update the UI to show new word count
 function count_words(text) {
   let words_num = text.match(WORD_REGEX).length;
   updateInnerText("wordnum", words_num);
@@ -142,27 +154,60 @@ document.getElementById("txtBtn").addEventListener("click", ()=>{
 // // Connect to the python functions stored in app.py
 eel.expose(return_candidates);
 function return_candidates(candidates) {
-  console.log(candidates)
-  suggestArea1.innerHTML = "";
-  suggestArea2.innerHTML = "";
+  suggestArea1.textContent = "";
+  suggestArea2.textContent = "";
   candidates.forEach(function(candidate) {
     let new_btn = document.createElement("button");
     new_btn.innerText = candidate["word"];
     new_btn.className = "suggestions";
-    // new_btn.onclick = function(){
-    //   let val = textarea.value
-    //   let head = val.slice(0, textarea.selectionStart);
-    //   let new_cursor_pos = head.length + candidate["word"].length + 1
-    //   textarea.value = head + candidate["word"] + " " + val.slice(textarea.selectionStart);
-    //   textarea.setSelectionRange(new_cursor_pos, new_cursor_pos);
-    //   textarea.focus();
-    //   count_words()
-    // };
-    suggestArea1.appendChild(new_btn);
+    new_btn.onclick = function(){
+      if (isWordSelected) {
+        let leftBound = getLeftWordBound().length;
+        let rightBound = getRightWordBound().length;
+        console.log("Replace:", quill.getText(selectionIndex-leftBound, leftBound + rightBound))
+        quill.deleteText(selectionIndex-leftBound, leftBound + rightBound);
+        quill.insertText(selectionIndex, this.innerText);
+      } else {
+        quill.insertText(selectionIndex, this.innerText);
+      }
+      count_words(quill.getText());
+    };
+    new_btn_copy = new_btn.cloneNode(true);
+    suggestArea1.appendChild(new_btn_copy);
     suggestArea2.appendChild(new_btn);
   });
 }
 
+// Get the left boundary of a word selected by cursor. Boundary is determined by the last space.
+function getLeftWordBound() {
+  let isContinue = true;
+  let currentChar = "";
+  let newIndex = selectionIndex;
+  let leftBound = ""
+  if (quill.getText(0, newIndex).includes(" ")) {
+    while (isContinue) {
+      newIndex--;
+      if (checkIfSpace(quill.getText(newIndex).charAt(0))) {
+        isContinue = false;
+      } else {
+        currentChar = quill.getText(newIndex).charAt(0)
+        leftBound = currentChar + leftBound
+      }
+    }
+    return leftBound
+  }
+  return quill.getText(0, newIndex)
+}
+
+// Get the right boundary of a word selected by cursor. Boundary is determined by the next space.
+function getRightWordBound() {
+  if (quill.getText(selectionIndex).split(/\s+/g).length > 0) {
+    return quill.getText(selectionIndex).split(/\s+/g)[0];
+  }
+  return quill.getText(selectionIndex);
+}
+
+// Return all words from corpus
 eel.expose(return_all_words);
 function return_all_words(words) {
   dictionaryList.innerHTML = "";
