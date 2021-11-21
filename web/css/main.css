@@ -56,6 +56,10 @@ h1 {
     box-sizing: border-box;
 }
 
+#editorMirror > * {
+    display: inline;
+}
+
 .suggestArea {
     border: solid 1px gray;
     background-color: white;

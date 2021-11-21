@@ -3,10 +3,7 @@ import eel
 # Get web page files from web folder
 eel.init('web')
 
-# Create python functions that can be called by webpage
-@eel.expose
-def get_candidates():
-    eel.return_candidates([
+CANDIDATES = [
             {"word": "cat", "distance": 5},
             {"word": "fish", "distance": 3},
             {"word": "carrot", "distance": 8},
@@ -24,11 +21,9 @@ def get_candidates():
             {"word": "end", "distance": 7},
             {"word": "water", "distance": 7},
             {"word": "cold", "distance": 13},
-        ])
+        ]
 
-@eel.expose
-def get_all_words():
-    eel.return_all_words([
+CORPUS = [
         "dispensable",
         "romantic",
         "squirrel",
@@ -80,7 +75,16 @@ def get_all_words():
         "guess",
         "aware",
         "willpower"
-    ])
+    ]
+
+# Create python functions that can be called by webpage
+@eel.expose
+def get_candidates():
+    eel.return_candidates(CANDIDATES)
+
+@eel.expose
+def get_all_words():
+    eel.return_all_words(sorted(CORPUS))
 
 
 # Index.html is where the main UI components are stored

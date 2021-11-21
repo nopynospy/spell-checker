@@ -22,7 +22,7 @@ let editorContainer = document.getElementById('editor-container');
 let suggestContainer = document.getElementById("suggestContainer");
 let editorMirror = document.getElementById("editorMirror");
 let suggestArea1 = document.getElementById("suggestArea1");
-let suggestArea2 = document.getElementById("suggestArea2");
+// let suggestArea2 = document.getElementById("suggestArea2");
 let dictionaryList = document.getElementById('dictionaryList');
 const MAX_WORDS  = 500;
 const WORD_REGEX = /([^\s]+)/g
@@ -57,15 +57,15 @@ mouse.getPosition = function(element, evt) {
 }
 
 // When the user clicks text edit area, get the mouse click position to show suggestion area
-editorContainer.addEventListener("click", function(e) {
-  mouse.downedPos = mouse.getPosition(this, e);
+// editorContainer.addEventListener("click", function(e) {
+//   mouse.downedPos = mouse.getPosition(this, e);
   // if (isEditing && (quill.getLength() > 1)) {
-  //   suggestArea1.style.top =( mouse.downedPos.y - 150) + "px";
-  //   suggestArea1.style.left = (mouse.downedPos.x - 260 )+ "px";
-  //   suggestArea1.style.opacity = 1;
-  //   suggestArea2.style.opacity = 0;
+  //   suggestArea2.style.top =( mouse.downedPos.y - 150) + "px";
+  //   suggestArea2.style.left = (mouse.downedPos.x - 260 )+ "px";
+  //   suggestArea2.style.opacity = 1;
+  //   suggestArea1.style.opacity = 0;
   // }
-});
+// });
 
 // Set the width of editor and suggestion container to not overlap with corpus area
 editorContainer.style.width = rightBodyWidth + "px"
@@ -75,8 +75,8 @@ suggestContainer.style.width = rightBodyWidth + "px"
 quill.on('editor-change', function(eventName, range, oldRange) {
   if (eventName === 'selection-change') {
     isEditing = false;
-    suggestArea1.style.opacity = 0;
-    suggestArea2.style.opacity = 1;
+    // suggestArea2.style.opacity = 0;
+    suggestArea1.style.opacity = 1;
 
     eel.get_candidates();
       if (range) {
@@ -97,13 +97,13 @@ quill.on('editor-change', function(eventName, range, oldRange) {
             }
             count_words(quill.getText());
             // Insert the line break element to simulate new lines in mirror
-            let newestText = quill.getText(0, selectionIndex).replace(/(?:\r\n|\r|\n)/g, '<br>&emsp;');
-            editorMirror.innerHTML = newestText
+            // let newestText = quill.getText(0, selectionIndex).replace(/(?:\r\n|\r|\n)/g, '<br>&emsp;');
+            updateMirror();
             let rect = suggestArea1.getBoundingClientRect();
             // console.log("RECT", rect)
             if (rect.right > document.body.clientWidth) {
               newestText = newestText.substring(0, newestText.length - 20);
-              editorMirror.innerHTML = newestText
+              updateMirror();
             }
           } else { // if more than one character selected
             var text = quill.getText(selectionIndex, range.length);
@@ -114,6 +114,11 @@ quill.on('editor-change', function(eventName, range, oldRange) {
         }
   }
 });
+
+// Helper function that synchs user input text with mirror
+function updateMirror() {
+  editorMirror.innerHTML = quill.root.innerHTML;
+}
 
 // Helper function to check if a string is space or line break
 function checkIfSpace(text) {
@@ -139,7 +144,7 @@ function updateInnerText(ele, text) {
 // Allow user to clear textarea text with the clear button
 document.getElementById("clearBtn").addEventListener("click", ()=>{
   updateInnerText("wordnum", 0);
-  updateInnerText("editorMirror", "")
+  updateMirror();
   quill.setText('');
 });
 
@@ -155,26 +160,27 @@ document.getElementById("txtBtn").addEventListener("click", ()=>{
 eel.expose(return_candidates);
 function return_candidates(candidates) {
   suggestArea1.textContent = "";
-  suggestArea2.textContent = "";
+  // suggestArea2.textContent = "";
   candidates.forEach(function(candidate) {
     let new_btn = document.createElement("button");
     new_btn.innerText = candidate["word"];
     new_btn.className = "suggestions";
     new_btn.onclick = function(){
-      if (isWordSelected) {
+      if (isWordSelected) { // if user selected a non-space character and clicked the button, replace word
         let leftBound = getLeftWordBound().length;
         let rightBound = getRightWordBound().length;
         console.log("Replace:", quill.getText(selectionIndex-leftBound, leftBound + rightBound))
         quill.deleteText(selectionIndex-leftBound, leftBound + rightBound);
         quill.insertText(selectionIndex, this.innerText);
-      } else {
+      } else { // if user selected a space character and clicked the button, insert word
         quill.insertText(selectionIndex, this.innerText);
       }
+      updateMirror();
       count_words(quill.getText());
     };
     new_btn_copy = new_btn.cloneNode(true);
-    suggestArea1.appendChild(new_btn_copy);
-    suggestArea2.appendChild(new_btn);
+    // suggestArea2.appendChild(new_btn_copy);
+    suggestArea1.appendChild(new_btn);
   });
 }
 

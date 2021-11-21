@@ -16,6 +16,7 @@
                 <br />
                 <!-- Corpus area -->
                 <div id="dictionaryContainer">
+                    <!-- User can see number of text, save and clear text -->
                     <div id="btn_container">
                         <span><span id="wordnum">0</span>/500 words</span>
                         <br>
@@ -23,6 +24,7 @@
                         <button id="clearBtn">Clear text</button>
                     </div>
                     <hr />
+                    <!-- User can search for words in the corpus -->
                     <h2>Corpus</h2>
                     <span>Press enter to search</span>
                     <input type="text" placeholder="Search word here" id="searchInput" />
@@ -35,9 +37,12 @@
                     <div id="editor-container"></div>
                     <!-- Text suggestion area, which will move according to user action -->
                     <div id="suggestContainer">
-                        <p id="editorMirror"></p>
+                        <!-- Create a hidden mirror that copies the user input -->
+                        <span id="editorMirror"></span>
+                        <!-- The suggest area is right behind the mirror,
+                             to create the illusion that it follows user text cursor -->
                         <span class="suggestArea" id="suggestArea1"></span>
-                        <span class="suggestArea" id="suggestArea2"></span>
+                        <!-- <span class="suggestArea" id="suggestArea2"></span> -->
                     </div>
                 </div>
             </div>
