@@ -22,7 +22,7 @@ let editorContainer = document.getElementById('editor-container');
 let suggestContainer = document.getElementById("suggestContainer");
 let editorMirror = document.getElementById("editorMirror");
 let suggestArea1 = document.getElementById("suggestArea1");
-// let suggestArea2 = document.getElementById("suggestArea2");
+let suggestArea2 = document.getElementById("suggestArea2");
 let dictionaryList = document.getElementById('dictionaryList');
 const MAX_WORDS  = 500;
 const WORD_REGEX = /([^\s]+)/g
@@ -57,15 +57,15 @@ mouse.getPosition = function(element, evt) {
 }
 
 // When the user clicks text edit area, get the mouse click position to show suggestion area
-// editorContainer.addEventListener("click", function(e) {
-//   mouse.downedPos = mouse.getPosition(this, e);
-  // if (isEditing && (quill.getLength() > 1)) {
-  //   suggestArea2.style.top =( mouse.downedPos.y - 150) + "px";
-  //   suggestArea2.style.left = (mouse.downedPos.x - 260 )+ "px";
-  //   suggestArea2.style.opacity = 1;
-  //   suggestArea1.style.opacity = 0;
-  // }
-// });
+editorContainer.addEventListener("click", function(e) {
+  mouse.downedPos = mouse.getPosition(this, e);
+  if (isEditing && (quill.getLength() > 1)) {
+    suggestArea2.style.top =( mouse.downedPos.y - 150) + "px";
+    suggestArea2.style.left = (mouse.downedPos.x - 260 )+ "px";
+    suggestArea2.style.opacity = 1;
+    suggestArea1.style.opacity = 0;
+  }
+});
 
 // Set the width of editor and suggestion container to not overlap with corpus area
 editorContainer.style.width = rightBodyWidth + "px"
@@ -75,7 +75,7 @@ suggestContainer.style.width = rightBodyWidth + "px"
 quill.on('editor-change', function(eventName, range, oldRange) {
   if (eventName === 'selection-change') {
     isEditing = false;
-    // suggestArea2.style.opacity = 0;
+    suggestArea2.style.opacity = 0;
     suggestArea1.style.opacity = 1;
 
     eel.get_candidates();
@@ -118,6 +118,7 @@ quill.on('editor-change', function(eventName, range, oldRange) {
 // Helper function that synchs user input text with mirror
 function updateMirror() {
   editorMirror.innerHTML = quill.root.innerHTML;
+  quill.focus();
 }
 
 // Helper function to check if a string is space or line break
@@ -160,7 +161,7 @@ document.getElementById("txtBtn").addEventListener("click", ()=>{
 eel.expose(return_candidates);
 function return_candidates(candidates) {
   suggestArea1.textContent = "";
-  // suggestArea2.textContent = "";
+  suggestArea2.textContent = "";
   candidates.forEach(function(candidate) {
     let new_btn = document.createElement("button");
     new_btn.innerText = candidate["word"];
@@ -169,7 +170,6 @@ function return_candidates(candidates) {
       if (isWordSelected) { // if user selected a non-space character and clicked the button, replace word
         let leftBound = getLeftWordBound().length;
         let rightBound = getRightWordBound().length;
-        console.log("Replace:", quill.getText(selectionIndex-leftBound, leftBound + rightBound))
         quill.deleteText(selectionIndex-leftBound, leftBound + rightBound);
         quill.insertText(selectionIndex, this.innerText);
       } else { // if user selected a space character and clicked the button, insert word
@@ -179,7 +179,19 @@ function return_candidates(candidates) {
       count_words(quill.getText());
     };
     new_btn_copy = new_btn.cloneNode(true);
-    // suggestArea2.appendChild(new_btn_copy);
+    new_btn_copy.onclick = function(){
+      if (isWordSelected) { // if user selected a non-space character and clicked the button, replace word
+        let leftBound = getLeftWordBound().length;
+        let rightBound = getRightWordBound().length;
+        quill.deleteText(selectionIndex-leftBound, leftBound + rightBound);
+        quill.insertText(selectionIndex, this.innerText);
+      } else { // if user selected a space character and clicked the button, insert word
+        quill.insertText(selectionIndex, this.innerText);
+      }
+      updateMirror();
+      count_words(quill.getText());
+    };
+    suggestArea2.appendChild(new_btn_copy);
     suggestArea1.appendChild(new_btn);
   });
 }
