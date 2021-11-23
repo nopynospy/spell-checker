@@ -14,6 +14,8 @@ pyqt5 = "*"
 bs4 = "*"
 bioc = "*"
 eel = "*"
+country-list = "*"
+eng-to-ipa = "*"
 
 [dev-packages]
 
