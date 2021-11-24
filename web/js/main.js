@@ -11,7 +11,6 @@ var quill = new Quill('#editor-container', {
   modules: {
     toolbar: false
   },
-  formats: [],
   placeholder: 'Compose an epic...',
   theme: 'snow'
 });
@@ -24,6 +23,10 @@ let editorMirror = document.getElementById("editorMirror");
 let suggestArea1 = document.getElementById("suggestArea1");
 let suggestArea2 = document.getElementById("suggestArea2");
 let dictionaryList = document.getElementById('dictionaryList');
+let searchInput = document.getElementById('searchInput');
+
+let corpus_words = [];
+
 const MAX_WORDS  = 500;
 const WORD_REGEX = /([^\s]+)/g
 
@@ -34,6 +37,8 @@ let isWordSelected = false;
 
 let selectionIndex = 0;
 let string_selected
+
+let non_words = [];
 
 // Function that gets mouse click coordinates on webpage
 // https://stackoverflow.com/questions/26551428/get-the-mouse-position-in-mousedown-and-mousemove-events
@@ -79,39 +84,40 @@ quill.on('editor-change', function(eventName, range, oldRange) {
     suggestArea1.style.opacity = 1;
 
     eel.get_candidates();
-      if (range) {
-        // If only one character selected
-          if (range.length == 0) {
-            isEditing = true;
-            console.log('User cursor is on', range.index);
-            selectionIndex = range.index
-            string_selected = quill.getText(selectionIndex-1);
-            string_selected = string_selected.charAt(0)
-            console.log("SELECTION", string_selected);
-            if (checkIfSpace(string_selected)) {
-              console.log("suggest next word");
-              isWordSelected = false;
-            } else {
-              console.log("check word");
-              isWordSelected = true;
-            }
-            count_words(quill.getText());
-            // Insert the line break element to simulate new lines in mirror
-            // let newestText = quill.getText(0, selectionIndex).replace(/(?:\r\n|\r|\n)/g, '<br>&emsp;');
-            updateMirror();
-            let rect = suggestArea1.getBoundingClientRect();
-            // console.log("RECT", rect)
-            if (rect.right > document.body.clientWidth) {
-              newestText = newestText.substring(0, newestText.length - 20);
-              updateMirror();
-            }
-          } else { // if more than one character selected
-            var text = quill.getText(selectionIndex, range.length);
-            console.log('User has highlighted', text);
+    if (range) {
+      // If only one character selected
+        if (range.length == 0) {
+          isEditing = true;
+          console.log('User cursor is on', range.index);
+          selectionIndex = range.index
+          string_selected = quill.getText(selectionIndex-1);
+          string_selected = string_selected.charAt(0)
+          console.log("SELECTION", string_selected);
+          if (checkIfSpace(string_selected)) {
+            console.log("suggest next word");
+            isWordSelected = false;
+            eel.check_non_words(quill.getText())
+          } else {
+            console.log("check word");
+            isWordSelected = true;
           }
-        } else { // if user select area outside of text editor
-          console.log('Cursor not in the editor');
+          count_words(quill.getText());
+          // Insert the line break element to simulate new lines in mirror
+          // let newestText = quill.getText(0, selectionIndex).replace(/(?:\r\n|\r|\n)/g, '<br>&emsp;');
+          updateMirror();
+          let rect = suggestArea1.getBoundingClientRect();
+          // console.log("RECT", rect)
+          if (rect.right > document.body.clientWidth) {
+            newestText = newestText.substring(0, newestText.length - 20);
+            updateMirror();
+          }
+        } else { // if more than one character selected
+          var text = quill.getText(selectionIndex, range.length);
+          console.log('User has highlighted', text);
         }
+      } else { // if user select area outside of text editor
+        console.log('Cursor not in the editor');
+      }
   }
 });
 
@@ -157,12 +163,44 @@ document.getElementById("txtBtn").addEventListener("click", ()=>{
   link.click();
 });
 
+searchInput.addEventListener("keyup", ()=>{
+  dictionaryList.innerHTML = "";
+  if (searchInput.value.length > 0) {
+    for (w in corpus_words) {
+      if (corpus_words[w].toUpperCase().startsWith(searchInput.value.toUpperCase())) {
+        let new_li= document.createElement("li");
+        new_li.innerText = corpus_words[w];
+        new_li.className = "";
+        dictionaryList.appendChild(new_li);
+      }
+    }
+  } else {
+    eel.get_all_words()
+  }
+});
+
+
 // // Connect to the python functions stored in app.py
 eel.expose(return_candidates);
 function return_candidates(candidates) {
   suggestArea1.textContent = "";
   suggestArea2.textContent = "";
-  candidates.forEach(function(candidate) {
+  candidate_words = candidates
+  if (isWordSelected) {
+    
+    let leftBound = getLeftWordBound().length;
+    let rightBound = getRightWordBound().length;
+    let currentWord = quill.getText(selectionIndex-leftBound, leftBound + rightBound);
+    
+    let results = non_words.filter(obj => {
+      return obj.non === currentWord
+    })
+    candidate_words = results[0]["suggestion"]
+    // console.log("NW CANDIDATES", non_words)
+  }
+  console.log("NW CANDIDATES", candidate_words)
+  // if isWordSelected and has suggestions gotten from check non words, use instead
+  candidate_words.forEach(function(candidate) {
     let new_btn = document.createElement("button");
     new_btn.innerText = candidate["word"];
     new_btn.className = "suggestions";
@@ -228,8 +266,9 @@ function getRightWordBound() {
 // Return all words from corpus
 eel.expose(return_all_words);
 function return_all_words(words) {
+  corpus_words = words;
   dictionaryList.innerHTML = "";
-  words.forEach(function(word) {
+  corpus_words.forEach(function(word) {
     let new_li= document.createElement("li");
     new_li.innerText = word;
     new_li.className = "";
@@ -238,3 +277,33 @@ function return_all_words(words) {
 }
 
 eel.get_all_words()
+
+eel.expose(return_nonwords);
+function return_nonwords(nonwords) {
+  non_words = nonwords;
+  non_words.forEach((nw) => {
+    indices = findAllOccurrences(quill.getText(), nw["non"])
+    indices.forEach((i) => {
+      console.log(quill.getText(i, nw["non"].length))
+      quill.formatText(i, nw["non"].length, {
+        'italic': true,
+        'underline': true
+      });
+    })
+  });
+}
+
+// https://stackoverflow.com/questions/3410464/how-to-find-indices-of-all-occurrences-of-one-string-in-another-in-javascript
+const findAllOccurrences = (str, substr) => {
+  str = str.toLowerCase();
+  
+  let result = [];
+
+  let idx = str.indexOf(substr)
+  
+  while (idx !== -1) {
+    result.push(idx);
+    idx = str.indexOf(substr, idx+1);
+  }
+  return result;
+}
