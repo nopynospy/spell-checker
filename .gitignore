@@ -2,3 +2,6 @@
 bigram_sample.ipynb
 pg1228_bigrams_original.json
 pg1228.txt
+bigramv2.ipynb
+test_db_readonly.py
+test_diff.py

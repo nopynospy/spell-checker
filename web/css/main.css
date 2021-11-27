@@ -21,6 +21,35 @@ h1 {
     width: 100%;
 }
 
+  #loader {
+    width: 1000px;
+    height: 70vh;
+    position: fixed;
+    z-index: 50;
+    left: 300px;
+    display: none;
+    justify-content: center;
+    align-items: center;
+  }
+  
+  #loader-wheel {
+    animation: spin 1s infinite linear;
+    border: 2px solid rgba(30, 30, 30, 0.5);
+    border-left: 4px solid black;
+    border-radius: 50%;
+    height: 500px;
+    width: 500px;
+  }
+  
+  @keyframes spin {
+    0% {
+      transform: rotate(0deg);
+    }
+    100% {
+      transform: rotate(360deg);
+    }
+  }
+  
 #editor-container, #editorMirror {
     font:monospace;
     font:18px/1 monospace;
@@ -64,12 +93,13 @@ h1 {
     border: solid 1px gray;
     background-color: white;
     max-width: 30vw;
-    height: 50px;
+    height: 80px;
     overflow: scroll;
     word-wrap: break-word;
     position: absolute;
     opacity: 0;
     z-index: 25;
+    resize: both;
 }
 
 ::-webkit-input-placeholder {

@@ -24,6 +24,7 @@ let suggestArea1 = document.getElementById("suggestArea1");
 let suggestArea2 = document.getElementById("suggestArea2");
 let dictionaryList = document.getElementById('dictionaryList');
 let searchInput = document.getElementById('searchInput');
+let loader = document.getElementById('loader');
 
 let corpus_words = [];
 
@@ -38,7 +39,10 @@ let isWordSelected = false;
 let selectionIndex = 0;
 let string_selected
 
-let non_words = [];
+let suggestions = [];
+let currentWord = "";
+
+let oldText = "";
 
 // Function that gets mouse click coordinates on webpage
 // https://stackoverflow.com/questions/26551428/get-the-mouse-position-in-mousedown-and-mousemove-events
@@ -62,19 +66,67 @@ mouse.getPosition = function(element, evt) {
 }
 
 // When the user clicks text edit area, get the mouse click position to show suggestion area
-editorContainer.addEventListener("click", function(e) {
-  mouse.downedPos = mouse.getPosition(this, e);
-  if (isEditing && (quill.getLength() > 1)) {
-    suggestArea2.style.top =( mouse.downedPos.y - 150) + "px";
-    suggestArea2.style.left = (mouse.downedPos.x - 260 )+ "px";
-    suggestArea2.style.opacity = 1;
-    suggestArea1.style.opacity = 0;
-  }
-});
+// editorContainer.addEventListener("click", function(e) {
+//   mouse.downedPos = mouse.getPosition(this, e);
+//   if (isEditing && (quill.getLength() > 1)) {
+//     suggestArea2.style.top =( mouse.downedPos.y - 150) + "px";
+//     suggestArea2.style.left = (mouse.downedPos.x - 260 )+ "px";
+//     suggestArea2.style.opacity = 1;
+//     suggestArea1.style.opacity = 0;
+//   }
+// });
 
 // Set the width of editor and suggestion container to not overlap with corpus area
 editorContainer.style.width = rightBodyWidth + "px"
 suggestContainer.style.width = rightBodyWidth + "px"
+
+editorContainer.addEventListener("paste", ()=>{
+  editorContainer.style.display = "none"
+  suggestArea1.style.display = "none"
+  loader.style.display = "flex";
+  // TODO: update once pasted text is checked
+});
+
+// Return all words from corpus
+eel.expose(return_all_words);
+function return_all_words(words) {
+  corpus_words = words;
+  dictionaryList.innerHTML = "";
+  corpus_words.forEach(function(word) {
+    let new_li= document.createElement("li");
+    new_li.innerText = word;
+    new_li.className = "";
+    dictionaryList.appendChild(new_li);
+  });
+}
+
+eel.get_all_words()
+
+// TODO: Update the suggestion UI
+// Get suggestions from the result of get_user_text in python
+eel.expose(return_suggestion);
+function return_suggestion(position) {
+  if (position.hasOwnProperty('suggestions')) {
+    quill.formatText(position["start"], position["token"].length, {
+      'italic': true,
+      'underline': true
+    });
+  }
+}
+
+eel.expose(return_suggestions);
+function return_suggestions(positions) {
+  suggestions = positions
+  console.log(suggestions)
+  suggestions.forEach((suggestion)=>{
+    if (suggestion.hasOwnProperty('suggestions')) {
+      quill.formatText(suggestion["start"], suggestion["token"].length, {
+        'italic': true,
+        'underline': true
+      });
+    }
+  })
+}
 
 // When text cursor in text editor change
 quill.on('editor-change', function(eventName, range, oldRange) {
@@ -93,13 +145,32 @@ quill.on('editor-change', function(eventName, range, oldRange) {
           string_selected = quill.getText(selectionIndex-1);
           string_selected = string_selected.charAt(0)
           console.log("SELECTION", string_selected);
-          if (checkIfSpace(string_selected)) {
-            console.log("suggest next word");
-            isWordSelected = false;
-            eel.check_non_words(quill.getText())
-          } else {
-            console.log("check word");
-            isWordSelected = true;
+          // When user moved text cursor and text has changed
+          if (quill.getText() !== oldText) {
+            if (checkIfSpace(string_selected)) {
+              console.log("suggest next word");
+              isWordSelected = false;
+              // eel.check_non_words(quill.getText());
+              eel.get_user_text(quill.getText());
+            } else {
+              // TODO: when user has idled for 2 seconds, check
+              // return_candidates()
+            }
+            oldText = quill.getText();
+          } else {  // When user moved text cursor and text has not changed
+            if (checkIfSpace(string_selected)) {
+
+            } else {
+              console.log("check word", suggestions);
+              isWordSelected = true;
+              for (let i=0; i<suggestions.length; i++) {
+                if (selectionIndex < (suggestions[i]["start"] + suggestions[i]["token"].length)) {
+                  currentWord = suggestions[i];
+                  break;
+                }
+              }
+              eel.return_positions();
+            }
           }
           count_words(quill.getText());
           // Insert the line break element to simulate new lines in mirror
@@ -187,18 +258,10 @@ function return_candidates(candidates) {
   suggestArea2.textContent = "";
   candidate_words = candidates
   if (isWordSelected) {
-    
-    let leftBound = getLeftWordBound().length;
-    let rightBound = getRightWordBound().length;
-    let currentWord = quill.getText(selectionIndex-leftBound, leftBound + rightBound);
-    
-    let results = non_words.filter(obj => {
-      return obj.non === currentWord
-    })
-    candidate_words = results[0]["suggestion"]
-    // console.log("NW CANDIDATES", non_words)
+        candidate_words = currentWord["suggestions"]
+    word_start = currentWord["start"]
+    word_len = currentWord["token"].length
   }
-  console.log("NW CANDIDATES", candidate_words)
   // if isWordSelected and has suggestions gotten from check non words, use instead
   candidate_words.forEach(function(candidate) {
     let new_btn = document.createElement("button");
@@ -206,104 +269,34 @@ function return_candidates(candidates) {
     new_btn.className = "suggestions";
     new_btn.onclick = function(){
       if (isWordSelected) { // if user selected a non-space character and clicked the button, replace word
-        let leftBound = getLeftWordBound().length;
-        let rightBound = getRightWordBound().length;
-        quill.deleteText(selectionIndex-leftBound, leftBound + rightBound);
-        quill.insertText(selectionIndex, this.innerText);
+        quill.removeFormat(word_start, word_len);
+        quill.insertText(word_start, this.innerText);
+        quill.deleteText(word_start + word_len, word_len);
       } else { // if user selected a space character and clicked the button, insert word
         quill.insertText(selectionIndex, this.innerText);
       }
+      eel.get_user_text(quill.getText());
+      quill.setSelection(selectionIndex + 1)
       updateMirror();
       count_words(quill.getText());
+      quill.focus();
     };
     new_btn_copy = new_btn.cloneNode(true);
-    new_btn_copy.onclick = function(){
-      if (isWordSelected) { // if user selected a non-space character and clicked the button, replace word
-        let leftBound = getLeftWordBound().length;
-        let rightBound = getRightWordBound().length;
-        quill.deleteText(selectionIndex-leftBound, leftBound + rightBound);
-        quill.insertText(selectionIndex, this.innerText);
-      } else { // if user selected a space character and clicked the button, insert word
-        quill.insertText(selectionIndex, this.innerText);
-      }
-      updateMirror();
-      count_words(quill.getText());
-    };
-    suggestArea2.appendChild(new_btn_copy);
+    // new_btn_copy.onclick = function(){
+    //   if (isWordSelected) { // if user selected a non-space character and clicked the button, replace word
+    //     let leftBound = getLeftWordBound().length;
+    //     let rightBound = getRightWordBound().length;
+    //     quill.deleteText(selectionIndex-leftBound, leftBound + rightBound);
+    //     quill.insertText(selectionIndex, this.innerText);
+    //   } else { // if user selected a space character and clicked the button, insert word
+    //     quill.insertText(selectionIndex, this.innerText);
+    //   }
+    //   updateMirror();
+    //   count_words(quill.getText());
+    //   quill.focus();
+    // };
+    // suggestArea2.appendChild(new_btn_copy);
     suggestArea1.appendChild(new_btn);
   });
 }
 
-// Get the left boundary of a word selected by cursor. Boundary is determined by the last space.
-function getLeftWordBound() {
-  let isContinue = true;
-  let currentChar = "";
-  let newIndex = selectionIndex;
-  let leftBound = ""
-  if (quill.getText(0, newIndex).includes(" ")) {
-    while (isContinue) {
-      newIndex--;
-      if (checkIfSpace(quill.getText(newIndex).charAt(0))) {
-        isContinue = false;
-      } else {
-        currentChar = quill.getText(newIndex).charAt(0)
-        leftBound = currentChar + leftBound
-      }
-    }
-    return leftBound
-  }
-  return quill.getText(0, newIndex)
-}
-
-// Get the right boundary of a word selected by cursor. Boundary is determined by the next space.
-function getRightWordBound() {
-  if (quill.getText(selectionIndex).split(/\s+/g).length > 0) {
-    return quill.getText(selectionIndex).split(/\s+/g)[0];
-  }
-  return quill.getText(selectionIndex);
-}
-
-// Return all words from corpus
-eel.expose(return_all_words);
-function return_all_words(words) {
-  corpus_words = words;
-  dictionaryList.innerHTML = "";
-  corpus_words.forEach(function(word) {
-    let new_li= document.createElement("li");
-    new_li.innerText = word;
-    new_li.className = "";
-    dictionaryList.appendChild(new_li);
-  });
-}
-
-eel.get_all_words()
-
-eel.expose(return_nonwords);
-function return_nonwords(nonwords) {
-  non_words = nonwords;
-  non_words.forEach((nw) => {
-    indices = findAllOccurrences(quill.getText(), nw["non"])
-    indices.forEach((i) => {
-      console.log(quill.getText(i, nw["non"].length))
-      quill.formatText(i, nw["non"].length, {
-        'italic': true,
-        'underline': true
-      });
-    })
-  });
-}
-
-// https://stackoverflow.com/questions/3410464/how-to-find-indices-of-all-occurrences-of-one-string-in-another-in-javascript
-const findAllOccurrences = (str, substr) => {
-  str = str.toLowerCase();
-  
-  let result = [];
-
-  let idx = str.indexOf(substr)
-  
-  while (idx !== -1) {
-    result.push(idx);
-    idx = str.indexOf(substr, idx+1);
-  }
-  return result;
-}
