@@ -24,7 +24,7 @@ h1 {
 /* Loader code referred to https://codepen.io/kingfisher13/pen/vKXwNN */
   #loader {
     height: 100px;
-    width: 500px;
+    width: 1000px;
     left: 300px;
     position: relative;
     display: none;
@@ -65,6 +65,7 @@ h1 {
 #editor-container {
     z-index: 10;
     top:150px;
+    margin-right: 100px;
 }
 
 #suggestContainer {
@@ -73,26 +74,30 @@ h1 {
 
 #editorMirror {
     padding: 18px 15px;
-    tab-size: 4;
-    line-height: 1.42;
-    -moz-tab-size: 4;
-    line-height: 1.42;
+    /* tab-size: 4;
+    -moz-tab-size: 4; */
     text-align: justify;
     white-space: pre-wrap;
     word-wrap: break-word;
     display: inline;
-    color: transparent;
+    /* color: transparent; */
     box-sizing: border-box;
 }
 
-#editorMirror > * {
-    display: inline;
+#editorMirror > p {
+  margin: 0;
+  padding: 0;
+  counter-reset: list-1 list-2 list-3 list-4 list-5 list-6 list-7 list-8 list-9;
+  margin: 0;
+  padding: 0;
+
 }
 
 .suggestArea {
     border: solid 1px gray;
     background-color: white;
     max-width: 30vw;
+    min-width: 200px;
     height: 80px;
     overflow: scroll;
     word-wrap: break-word;
@@ -135,3 +140,18 @@ h1 {
     margin: 4px 2px;
     cursor: pointer;
   }
+
+  .suggestions:hover {
+    background-color: black;
+    color: white;
+  }
+
+#check_button {
+  position: absolute;
+  right: 100px;
+  top: 120px
+}
+
+.quill-mention {
+  background-color: lightgreen;
+}

@@ -3,9 +3,11 @@ import json
 import os.path
 from dotenv import load_dotenv
 import pymongo
+import uuid
 
 from nltk import edit_distance, TweetTokenizer, ngrams
 import eng_to_ipa as eng_to_ipa
+import re
 
 load_dotenv()
 ENDPOINT = os.getenv('HEADER') +  os.getenv('GUEST_ID') + ":" +os.getenv('GUEST_PW') +  os.getenv('ENDPOINT')
@@ -21,6 +23,7 @@ unigrams = []
 
 with open('unigrams.json') as json_file:
     unigrams = json.load(json_file)
+    json_file.close()
 
 CORPUS = sorted([d['token'] for d in unigrams if 'token' in d])
 
@@ -45,31 +48,6 @@ user_message = ""
 # Get web page files from web folder
 eel.init('web')
 
-CANDIDATES = [
-            {"word": "cat", "distance": 5},
-            {"word": "fish", "distance": 3},
-            {"word": "carrot", "distance": 8},
-            {"word": "egg", "distance": 9},
-            {"word": "onion", "distance": 12},
-            {"word": "seaweed", "distance": 4},
-            {"word": "apple", "distance": 9},
-            {"word": "car", "distance": 15},
-            {"word": "house", "distance": 11},
-            {"word": "old", "distance": 7},
-            {"word": "new", "distance": 7},
-            {"word": "past", "distance": 13},
-            {"word": "pig", "distance": 15},
-            {"word": "world", "distance": 11},
-            {"word": "end", "distance": 7},
-            {"word": "water", "distance": 7},
-            {"word": "cold", "distance": 13},
-        ]
-
-# Create python functions that can be called by webpage
-@eel.expose
-def get_candidates():
-    eel.return_candidates(CANDIDATES)
-
 @eel.expose
 def get_all_words():
     eel.return_all_words(sorted(CORPUS_WORDS))
@@ -88,7 +66,7 @@ def get_similar_words(word, dist1=2, dist2=2):
             spell_dist = edit_distance(entry['token'], word)
             # If smaller than the target distance, append the entry
             if spell_dist < dist1:
-                similar_words.append({"word": entry['token'], "stats": spell_dist})
+                similar_words.append({"word": entry['token'], "stats": spell_dist, "type": "nonword-sp"})
             # When ipa translation fails, the original word is used.
             # If the ipa is translated, the orignal word will not be in the result
             if word not in ipa:
@@ -98,7 +76,7 @@ def get_similar_words(word, dist1=2, dist2=2):
                     sound_dist = edit_distance(entry['ipa'], ipa)
                     # If smaller than target distance, append the entry
                     if sound_dist < dist2:
-                        similar_words.append({"word": entry['token'], "stats": sound_dist})
+                        similar_words.append({"word": entry['token'], "stats": sound_dist, "type": "nonword-sd"})
 
     # A similar word may appear twice, if both its spelling and sound edit distance are close
     # Keep only unique words in the list
@@ -128,19 +106,6 @@ def get_word_errors(bigram):
                 suggestions.append(entry)
         return suggestions
 
-def check_new(lst, query):
-    for i, dic in enumerate(lst):
-        if dic["token"] == query["token"] and dic["start"] == query["start"] and "suggestions" in list(query.keys()):
-            return i
-    return -1
-
-def combine_old_new(list1, list2):
-    for old in list1:
-        index = check_new(list2, old)
-        if index > -1:
-            list2[index]["suggestions"] = old["suggestions"]
-    return list2
-
 @eel.expose
 def get_user_text(text):
     global state_mgm_text, state_mgm_tokens, state_mgm_bigrams, state_mgm_positions, user_message
@@ -150,6 +115,7 @@ def get_user_text(text):
     searchPosition = 0
     # If the current text has changed
     if text != state_mgm_text:
+        text = re.sub("([0-9]+ [0])+", "4", text)
         return_load_message(ON_PASTE_TEXT)
         # Tokenize user input text with nltk
         curr_tokens = tknzr.tokenize(text)
@@ -168,9 +134,9 @@ def get_user_text(text):
         # Using the current tokens, generate bigrams
         curr_bigrams = ngrams(curr_tokens,2)
         # NLTK n-gram returns a list of tuple and keep only new bigrams added by user
-        new_bigrams = compare_list_tuple(state_mgm_bigrams, curr_bigrams)
+        # new_bigrams = compare_list_tuple(state_mgm_bigrams, curr_bigrams)
         bigram_log_number = 0
-        for b in new_bigrams:
+        for b in curr_bigrams:
             # For every new bigram added
             real_word_suggestions = get_word_errors(b)
             # If there is suggestion
@@ -179,7 +145,9 @@ def get_user_text(text):
                     try:
                         if positions[i]["token"] == b[0] and positions[i+1]["token"] == b[1]:
                             positions[i+1]["suggestions"] = real_word_suggestions
-                            # return_position(positions[i+1])
+                            positions[i+1]["type"] = "realword"
+                            positions[i+1]["id"] =  str(uuid.uuid4())
+                            return_position(positions[i+1])
                             bigram_log_number += 1
                             return_load_message("Found real word error " + str(bigram_log_number) + ": " + b[1])
                     except Exception as e:
@@ -188,7 +156,6 @@ def get_user_text(text):
         for n in new_tokens:
             # Check non word if token is a word, since a token can be punctuation
             if n["token"].isalpha():
-                print(n["token"])
                 non_word_suggestions = get_similar_words(n["token"])
                 # If there is suggestion
                 if len(non_word_suggestions) > 0:
@@ -197,22 +164,20 @@ def get_user_text(text):
                     for p in positions:
                         if p["token"] == n["token"]:
                             p["suggestions"] = n["suggestions"]
+                            p["type"] = "nonword"
+                            p["id"] =  str(uuid.uuid4())
                             non_word_log_number += 1
                             return_load_message("Found non-word error " + str(non_word_log_number) + ": " + p["token"])
-
-        curr_positions = combine_old_new(state_mgm_positions, positions)
 
         # Save the current text, so that when user make changes, can be detected
         state_mgm_text = text
         state_mgm_tokens = curr_tokens
         state_mgm_bigrams = curr_bigrams
-        state_mgm_positions = curr_positions
+        state_mgm_positions = positions
+        print(positions)
+        eel.return_suggestions(positions)
 
-        print(curr_positions)
-        eel.return_suggestions(curr_positions)
-
-@eel.expose
-def return_positions():
+def return_suggestions(positions):
     eel.return_suggestions(positions)
 
 def return_position(position):
