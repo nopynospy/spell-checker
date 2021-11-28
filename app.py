@@ -39,6 +39,9 @@ non_words = []
 curr_tokens = []
 curr_bigrams = []
 
+ON_PASTE_TEXT = "Processing pasted text"
+user_message = ""
+
 # Get web page files from web folder
 eel.init('web')
 
@@ -140,13 +143,14 @@ def combine_old_new(list1, list2):
 
 @eel.expose
 def get_user_text(text):
-    global state_mgm_text, state_mgm_tokens, state_mgm_bigrams, state_mgm_positions
+    global state_mgm_text, state_mgm_tokens, state_mgm_bigrams, state_mgm_positions, user_message
     # Posistions contain a list of all tokens in user text and their starting position
     positions = []
     # Create a variable to keep track of search index
     searchPosition = 0
     # If the current text has changed
     if text != state_mgm_text:
+        return_load_message(ON_PASTE_TEXT)
         # Tokenize user input text with nltk
         curr_tokens = tknzr.tokenize(text)
         for c in curr_tokens:
@@ -165,6 +169,7 @@ def get_user_text(text):
         curr_bigrams = ngrams(curr_tokens,2)
         # NLTK n-gram returns a list of tuple and keep only new bigrams added by user
         new_bigrams = compare_list_tuple(state_mgm_bigrams, curr_bigrams)
+        bigram_log_number = 0
         for b in new_bigrams:
             # For every new bigram added
             real_word_suggestions = get_word_errors(b)
@@ -174,9 +179,12 @@ def get_user_text(text):
                     try:
                         if positions[i]["token"] == b[0] and positions[i+1]["token"] == b[1]:
                             positions[i+1]["suggestions"] = real_word_suggestions
-                            eel.return_suggestion(positions[i+1])
+                            # return_position(positions[i+1])
+                            bigram_log_number += 1
+                            return_load_message("Found real word error " + str(bigram_log_number) + ": " + b[1])
                     except Exception as e:
                         pass
+        non_word_log_number = 0
         for n in new_tokens:
             # Check non word if token is a word, since a token can be punctuation
             if n["token"].isalpha():
@@ -189,7 +197,8 @@ def get_user_text(text):
                     for p in positions:
                         if p["token"] == n["token"]:
                             p["suggestions"] = n["suggestions"]
-                            eel.return_suggestion(entry)
+                            non_word_log_number += 1
+                            return_load_message("Found non-word error " + str(non_word_log_number) + ": " + p["token"])
 
         curr_positions = combine_old_new(state_mgm_positions, positions)
 
@@ -208,6 +217,11 @@ def return_positions():
 
 def return_position(position):
     eel.return_suggestion(position)
+
+def return_load_message(message):
+    global user_message
+    user_message += message + "<br />"
+    eel.return_load_message(str(user_message))
 
 # Index.html is where the main UI components are stored
 eel.start('index.html')

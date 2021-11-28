@@ -21,15 +21,15 @@ h1 {
     width: 100%;
 }
 
+/* Loader code referred to https://codepen.io/kingfisher13/pen/vKXwNN */
   #loader {
-    width: 1000px;
-    height: 70vh;
-    position: fixed;
-    z-index: 50;
+    height: 100px;
+    width: 500px;
     left: 300px;
+    position: relative;
     display: none;
-    justify-content: center;
-    align-items: center;
+    overflow: scroll;
+    background-color: rgb(206, 206, 206);
   }
   
   #loader-wheel {
@@ -37,8 +37,8 @@ h1 {
     border: 2px solid rgba(30, 30, 30, 0.5);
     border-left: 4px solid black;
     border-radius: 50%;
-    height: 500px;
-    width: 500px;
+    height: 15px;
+    width: 15px;
   }
   
   @keyframes spin {

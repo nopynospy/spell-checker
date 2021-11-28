@@ -11,7 +11,6 @@ var quill = new Quill('#editor-container', {
   modules: {
     toolbar: false
   },
-  placeholder: 'Compose an epic...',
   theme: 'snow'
 });
 quill.root.setAttribute("spellcheck", "false")
@@ -25,6 +24,7 @@ let suggestArea2 = document.getElementById("suggestArea2");
 let dictionaryList = document.getElementById('dictionaryList');
 let searchInput = document.getElementById('searchInput');
 let loader = document.getElementById('loader');
+let loaderText = document.getElementById('loader-text');
 
 let corpus_words = [];
 
@@ -35,6 +35,7 @@ const rightBodyWidth = document.body.clientWidth - 310
 
 let isEditing = false;
 let isWordSelected = false;
+let hasPasted = false;
 
 let selectionIndex = 0;
 let string_selected
@@ -81,10 +82,11 @@ editorContainer.style.width = rightBodyWidth + "px"
 suggestContainer.style.width = rightBodyWidth + "px"
 
 editorContainer.addEventListener("paste", ()=>{
-  editorContainer.style.display = "none"
-  suggestArea1.style.display = "none"
+  // editorContainer.style.opacity = 0
+  // suggestArea1.style.opacity = 0
+  hasPasted = true;
   loader.style.display = "flex";
-  // TODO: update once pasted text is checked
+  quill.editor.disable();
 });
 
 // Return all words from corpus
@@ -126,6 +128,15 @@ function return_suggestions(positions) {
       });
     }
   })
+  // editorContainer.style.opacity = 1
+  // suggestArea1.style.opacity = 1
+  loader.style.display = "none";
+  quill.editor.enable();
+}
+
+eel.expose(return_load_message);
+function return_load_message(message) {
+  loaderText.innerHTML = message
 }
 
 // When text cursor in text editor change
@@ -134,7 +145,7 @@ quill.on('editor-change', function(eventName, range, oldRange) {
     isEditing = false;
     suggestArea2.style.opacity = 0;
     suggestArea1.style.opacity = 1;
-
+    // TODO: replace this
     eel.get_candidates();
     if (range) {
       // If only one character selected
@@ -150,11 +161,16 @@ quill.on('editor-change', function(eventName, range, oldRange) {
             if (checkIfSpace(string_selected)) {
               console.log("suggest next word");
               isWordSelected = false;
-              // eel.check_non_words(quill.getText());
               eel.get_user_text(quill.getText());
+              // eel.check_non_words(quill.getText());
             } else {
               // TODO: when user has idled for 2 seconds, check
               // return_candidates()
+            }
+            // TODO: cannot like this, should still check
+            if (hasPasted) {
+              eel.get_user_text(quill.getText());
+              hasPasted = false
             }
             oldText = quill.getText();
           } else {  // When user moved text cursor and text has not changed
