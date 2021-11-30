@@ -214,6 +214,51 @@ var quill = new Quill('#editor-container', {
 });
 quill.root.setAttribute("spellcheck", "false")
 
+// https://www.w3schools.com/howto/howto_js_draggable.asp
+
+dragElement(document.getElementById("suggestArea1"));
+
+function dragElement(elmnt) {
+  var pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
+  if (document.getElementById(elmnt.id + "header")) {
+    // if present, the header is where you move the DIV from:
+    document.getElementById(elmnt.id + "header").onmousedown = dragMouseDown;
+  } else {
+    // otherwise, move the DIV from anywhere inside the DIV:
+    elmnt.onmousedown = dragMouseDown;
+  }
+
+  function dragMouseDown(e) {
+    e = e || window.event;
+    e.preventDefault();
+    // get the mouse cursor position at startup:
+    pos3 = e.clientX;
+    pos4 = e.clientY;
+    document.onmouseup = closeDragElement;
+    // call a function whenever the cursor moves:
+    document.onmousemove = elementDrag;
+  }
+
+  function elementDrag(e) {
+    e = e || window.event;
+    e.preventDefault();
+    // calculate the new cursor position:
+    pos1 = pos3 - e.clientX;
+    pos2 = pos4 - e.clientY;
+    pos3 = e.clientX;
+    pos4 = e.clientY;
+    // set the element's new position:
+    elmnt.style.top = (elmnt.offsetTop - pos2) + "px";
+    elmnt.style.left = (elmnt.offsetLeft - pos1) + "px";
+  }
+
+  function closeDragElement() {
+    // stop moving when mouse button is released:
+    document.onmouseup = null;
+    document.onmousemove = null;
+  }
+}
+
 // Initiate variables and constants
 let editorContainer = document.getElementById('editor-container');
 let suggestContainer = document.getElementById("suggestContainer");
@@ -225,6 +270,10 @@ let searchInput = document.getElementById('searchInput');
 let loader = document.getElementById('loader');
 let loaderText = document.getElementById('loader-text');
 let checkButton = document.getElementById('check_button');
+let wordNum = document.getElementById('wordNum');
+let seedNum = document.getElementById('seedNum');
+let nwNum = document.getElementById('nwNum');
+let sampleBtn = document.getElementById('sample-btn');
 
 let corpus_words = [];
 
@@ -265,6 +314,16 @@ checkButton.addEventListener("click", ()=>{
   suggestArea1.style.opacity = 0;
   quill.setText(stripped_text);
 });
+
+sampleBtn.addEventListener("click", ()=>{
+  eel.generate_sample(wordNum.value, seedNum.value, nwNum.value);
+});
+
+eel.expose(return_sample);
+function return_sample(sample) {
+  quill.setText(sample);
+  count_words(quill.getText());
+}
 
 // Return all words from corpus
 eel.expose(return_all_words);
@@ -317,8 +376,8 @@ function return_suggestions(positions) {
   var mention_click = function(event) {
     var attribute = this.getAttribute("data-id");
     // https://codepen.io/rm89/pen/aNOmzQ
-    var xPosition = event.clientX - editorContainer.getBoundingClientRect().left - (suggestArea1.clientWidth / 5);
-    var yPosition = event.clientY - editorContainer.getBoundingClientRect().top - (suggestArea1.clientHeight / 5);
+    var xPosition = event.pageX - editorContainer.getBoundingClientRect().left - (suggestArea1.clientWidth / 3);
+    var yPosition = event.pageY - editorContainer.getBoundingClientRect().top - (suggestArea1.clientHeight / 3);
     generate_buttons(xPosition, yPosition, attribute, this.id, this.getAttribute("data-start"))
   };
   
@@ -361,7 +420,10 @@ quill.on('editor-change', function(eventName, range, oldRange) {
           console.log('User has highlighted', text);
         }
       } else { // if user select area outside of text editor
-        suggestArea1.style.opacity = 1; 
+        if (suggestions.length > 0) {
+          suggestArea1.style.opacity = 1;
+        }
+        
         console.log('Cursor not in the editor');
       }
   }
@@ -393,6 +455,7 @@ document.getElementById("clearBtn").addEventListener("click", ()=>{
   updateInnerText("wordnum", 0);
   updateMirror();
   quill.setText('');
+  suggestions = [];
 });
 
 // Allow user to download textarea text as a .txt file using the download button
@@ -430,8 +493,9 @@ function generate_buttons(x, y, candidates, parentId, parentStart) {
     // if isWordSelected and has suggestions gotten from check non words, use instead
     for (let i =0; i<candidates.length; i++) {
       let new_btn = document.createElement("button");
-      new_btn.innerText = candidates[i]["word"];
+      new_btn.innerText = candidates[i]["word"]  + "\n" + candidates[i]["stats"];
       new_btn.className = "suggestions";
+      // new_btn.classList.add('class-1');
       new_btn.onclick = function(){
         document.getElementById(parentId).innerText = this.innerText;
         suggestArea1.style.opacity = 0; 
@@ -439,5 +503,4 @@ function generate_buttons(x, y, candidates, parentId, parentStart) {
       suggestArea1.appendChild(new_btn);
     }
   }
-
 }

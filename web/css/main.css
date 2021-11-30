@@ -97,7 +97,7 @@ h1 {
     background-color: white;
     max-width: 30vw;
     min-width: 200px;
-    height: 80px;
+    height: 200px;
     overflow: scroll;
     word-wrap: break-word;
     position: absolute;
@@ -124,7 +124,7 @@ h1 {
 
  #dictionaryList {
      overflow-y: scroll;
-     height: 70vh;
+     height: 80vh;
  }
 
  .suggestions {
@@ -138,6 +138,8 @@ h1 {
     font-size: 16px;
     margin: 4px 2px;
     cursor: pointer;
+    word-break: keep-all;
+    text-align: center;
   }
 
   .suggestions:hover {

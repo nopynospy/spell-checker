@@ -4,6 +4,8 @@ import os.path
 from dotenv import load_dotenv
 import pymongo
 import uuid
+import random
+import string
 
 from nltk import edit_distance, TweetTokenizer, ngrams
 import eng_to_ipa as eng_to_ipa
@@ -19,13 +21,13 @@ MYCOL = DB[os.getenv('COL_NAME')]
 
 tknzr = TweetTokenizer()
 
-unigrams = []
+UNIGRAMS = []
 
 with open('unigrams.json') as json_file:
-    unigrams = json.load(json_file)
+    UNIGRAMS = json.load(json_file)
     json_file.close()
 
-CORPUS = sorted([d['token'] for d in unigrams if 'token' in d])
+CORPUS = sorted([d['token'] for d in UNIGRAMS if 'token' in d])
 
 CORPUS_WORDS = [x for x in CORPUS if x[0].isalpha()]
 
@@ -53,7 +55,7 @@ def get_all_words():
 
 def get_similar_words(word, dist1=2, dist2=2): 
     similar_words = []
-    corpus = unigrams
+    corpus = UNIGRAMS
     # Remove trailing whitespaces
     word = word.strip()
     ipa = eng_to_ipa.convert(word)
@@ -90,7 +92,7 @@ def compare_list_tuple(ls1, ls2):
 
 def get_word_errors(bigram):
     # If the word in the first word in bigram is a word in unigrams
-    if any(d['token'] == bigram[0] for d in unigrams) and any(d['token'] == bigram[1] for d in unigrams):
+    if any(d['token'] == bigram[0] for d in UNIGRAMS) and any(d['token'] == bigram[1] for d in UNIGRAMS):
         suggestions = []
         # Send a query to get its bigrams
         myquery = { "token":  bigram[0] }
@@ -222,6 +224,65 @@ def return_load_message(message):
     global user_message
     user_message += message + "<br /><br />"
     eel.return_load_message(str(user_message))
+
+def shuffle(iter, seed, by):
+    # https://stackoverflow.com/questions/22161075/how-to-scramble-the-words-in-a-sentence-python
+    iter = iter.split(by)
+    seed = int(seed)
+    random.seed(seed)
+    foo = list(iter)
+    random.shuffle(foo)
+    return by.join(foo)
+
+def validate_input_num(input):
+    output = re.sub("[^0-9]", "", input)
+    return int(output)
+
+@eel.expose
+def generate_sample(length, seed, nw):
+    # in case user added decimal places in input boxes
+    seed = validate_input_num(seed)
+    length = validate_input_num(length)
+    nw = validate_input_num(nw)
+
+    if (nw < 10):
+        nw = 10
+    elif nw > 50:
+        nw = 50
+
+    random.seed(seed)
+    texts = []
+
+    with open('preprocessed.json') as f:
+        texts = json.load(f)
+        f.close()
+
+    result = ""
+
+    while len(result.split()) < length:
+        entry = shuffle(random.Random(seed).choice(texts), seed, " ")
+        seed += 1
+        entry = " ".join(entry.split())
+        result = result + "\n\n" + entry
+
+    result = result.strip()
+
+    # https://stackoverflow.com/questions/51079986/generate-misspelled-words-typos
+    new_result = []
+    words = result.split(' ')
+    for word in words:
+        outcome = random.random()
+        if outcome <= nw/100:
+            ix = random.choice(range(len(word)))
+            new_word = ''.join([word[w] if w != ix else random.choice(string.ascii_letters) for w in range(len(word))])
+            new_result.append(new_word)
+        else:
+            new_result.append(word)
+
+    new_result = ' '.join([w for w in new_result])
+
+    eel.return_sample(new_result)
+
 
 # Index.html is where the main UI components are stored
 eel.start('index.html')

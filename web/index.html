@@ -18,7 +18,6 @@
         
         <div id="body_container">
             <div id="left_body">
-                <br />
                 <!-- Corpus area -->
                 <div id="dictionaryContainer">
                     <!-- User can see number of text, save and clear text -->
@@ -39,6 +38,16 @@
                         <button id="txtBtn">Save as text file</button>
                         <button id="clearBtn">Clear text</button>
                         <button id="check_button">Check spelling</button>
+                        <br />
+                        <br />
+                        <label for="wordNum">Number of words:</label>
+                        <input type="number" step="1" min="10" max="450" id="wordNum" name="wordNum" value="50" />
+                        <label for="seedNum">Seed:</label>
+                        <input type="number" step="1" value="999" id="seedNum" name="seedNum" />
+                        <label for="nwNum">Probability of non-words:</label>
+                        <input type="number" step="1" min="10" max="50" value="10" id="nwNum" name="nwNum" />
+                        <button id="sample-btn">Generate sample text</button>
+                        <hr />
                     </div>
                     
                     <br />
@@ -46,7 +55,7 @@
                     <div id="editor-container"></div>
                     <!-- Text suggestion area, which will move according to user action -->
                     <div id="suggestContainer">
-                        <span class="suggestArea" id="suggestArea1">No suggestion</span>
+                        <div class="suggestArea" id="suggestArea1" draggable="true">No suggestion</div>
                     </div>
                 </div>
             </div>
