@@ -15,7 +15,7 @@
             <div id="loader-wheel"></div>
             <div id="loader-text"></div>
         </div>
-        <button id="check_button">Check spelling</button>
+        
         <div id="body_container">
             <div id="left_body">
                 <br />
@@ -23,10 +23,7 @@
                 <div id="dictionaryContainer">
                     <!-- User can see number of text, save and clear text -->
                     <div id="btn_container">
-                        <span><span id="wordnum">0</span>/500 words</span>
-                        <br>
-                        <button id="txtBtn">Save as text file</button>
-                        <button id="clearBtn">Clear text</button>
+
                     </div>
                     <hr />
                     <!-- User can search for words in the corpus -->
@@ -37,17 +34,19 @@
             </div>
             <div id="right_body">
                 <div id="overlay-container">
+                    <div id="btn_toolbar">
+                        <span><span id="wordnum">0</span>/500 words</span>
+                        <button id="txtBtn">Save as text file</button>
+                        <button id="clearBtn">Clear text</button>
+                        <button id="check_button">Check spelling</button>
+                    </div>
+                    
+                    <br />
                     <!-- Text edit area -->
                     <div id="editor-container"></div>
                     <!-- Text suggestion area, which will move according to user action -->
                     <div id="suggestContainer">
-
-                        <!-- Create a hidden mirror that copies the user input -->
-                        <div id="editorMirror"></div>
                         <span class="suggestArea" id="suggestArea1">No suggestion</span>
-                        <!-- The suggest area is right behind the mirror,
-                             to create the illusion that it follows user text cursor -->
-                        <!-- <span class="suggestArea" id="suggestArea2"></span> -->
                     </div>
                 </div>
             </div>

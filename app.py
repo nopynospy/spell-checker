@@ -42,7 +42,6 @@ non_words = []
 curr_tokens = []
 curr_bigrams = []
 
-ON_PASTE_TEXT = "Processing pasted text"
 user_message = ""
 
 # Get web page files from web folder
@@ -106,9 +105,19 @@ def get_word_errors(bigram):
                 suggestions.append(entry)
         return suggestions
 
+def create_error_message(kind, num, cause, suggestion):
+    return "Found "+ kind +" error " + str(num) + ": " + cause + "<br />Suggestions: " + ", ".join([item['word'] for item in suggestion])
+
+def in_dictlist(key, value, my_dictlist):
+    for entry in my_dictlist:
+        if entry[key] == value:
+            return entry
+    return {}
+
 @eel.expose
 def get_user_text(text):
     global state_mgm_text, state_mgm_tokens, state_mgm_bigrams, state_mgm_positions, user_message
+    user_message = ""
     # Posistions contain a list of all tokens in user text and their starting position
     positions = []
     # Create a variable to keep track of search index
@@ -116,7 +125,8 @@ def get_user_text(text):
     # If the current text has changed
     if text != state_mgm_text:
         text = re.sub("([0-9]+ [0])+", "4", text)
-        return_load_message(ON_PASTE_TEXT)
+        text = text.replace(u'\ufeff', ' ')
+        return_load_message("Receiving user input text")
         # Tokenize user input text with nltk
         curr_tokens = tknzr.tokenize(text)
         for c in curr_tokens:
@@ -125,6 +135,27 @@ def get_user_text(text):
             positions.append(entry)
             # Update search index, so that next iteration searches after this word
             searchPosition += len(c)
+        #  For efficiency purpose, get suggestions from previous checks
+        return_load_message("Loading suggestions from cache")
+        for i, p in enumerate(positions):
+            for o, s in enumerate(state_mgm_positions):
+                # Found a nonword with suggestions that still exists from earlier check
+                if p["token"] == s["token"] and "suggestions" in list(s.keys()):
+                    if s["type"] == "nonword":
+                        p["suggestions"] = s["suggestions"]
+                        p["type"] = s["type"]
+                        p["id"] = s["id"]
+                # Finding if a pair of bigram with suggestion still exist from earlier check
+                try:
+                    if state_mgm_positions[o]["token"] == positions[i]["token"] and state_mgm_positions[o+1]["token"] == positions[i+1]["token"] and "suggestions" in list(state_mgm_positions[o+1].keys()):
+                        print(state_mgm_positions[o])
+                        print(state_mgm_positions[o+1])
+                        if state_mgm_positions[o+1]["type"] == "realword":
+                            positions[i+1]["suggestions"] = state_mgm_positions[o+1]["suggestions"]
+                            positions[i+1]["type"] = state_mgm_positions[o+1]["type"]
+                            positions[i+1]["id"] = state_mgm_positions[o+1]["id"]
+                except Exception as e:
+                    pass
         # Only get the new tokens typed
         new_tokens = [i for i in curr_tokens if i not in state_mgm_tokens]
         # Remove duplicates
@@ -132,26 +163,29 @@ def get_user_text(text):
         # Convert list into list of dictionaries
         new_tokens = [{"token": i} for i in new_tokens]
         # Using the current tokens, generate bigrams
-        curr_bigrams = ngrams(curr_tokens,2)
+        curr_bigrams = list(ngrams(curr_tokens,2))
+        new_bigrams = list(set(curr_bigrams) - set(state_mgm_bigrams))
         # NLTK n-gram returns a list of tuple and keep only new bigrams added by user
-        # new_bigrams = compare_list_tuple(state_mgm_bigrams, curr_bigrams)
+        new_bigrams = compare_list_tuple(state_mgm_bigrams, curr_bigrams)
         bigram_log_number = 0
         for b in curr_bigrams:
-            # For every new bigram added
-            real_word_suggestions = get_word_errors(b)
-            # If there is suggestion
-            if real_word_suggestions:
-                for i, p in enumerate(positions):
-                    try:
-                        if positions[i]["token"] == b[0] and positions[i+1]["token"] == b[1]:
-                            positions[i+1]["suggestions"] = real_word_suggestions
-                            positions[i+1]["type"] = "realword"
-                            positions[i+1]["id"] =  str(uuid.uuid4())
-                            return_position(positions[i+1])
-                            bigram_log_number += 1
-                            return_load_message("Found real word error " + str(bigram_log_number) + ": " + b[1])
-                    except Exception as e:
-                        pass
+            if b in new_bigrams:
+                # For every new bigram added
+                real_word_suggestions = get_word_errors(b)
+                # If there is suggestion
+                if real_word_suggestions:
+                    for i, p in enumerate(positions):
+                        try:
+                            if positions[i]["token"] == b[0] and positions[i+1]["token"] == b[1]:
+                                positions[i+1]["suggestions"] = real_word_suggestions
+                                positions[i+1]["type"] = "realword"
+                                positions[i+1]["id"] =  str(uuid.uuid4())
+                                return_position(positions[i+1])
+                                bigram_log_number += 1
+                                msg = create_error_message("real word", bigram_log_number, b[1], real_word_suggestions)
+                                return_load_message(msg)
+                        except Exception as e:
+                            pass
         non_word_log_number = 0
         for n in new_tokens:
             # Check non word if token is a word, since a token can be punctuation
@@ -167,7 +201,8 @@ def get_user_text(text):
                             p["type"] = "nonword"
                             p["id"] =  str(uuid.uuid4())
                             non_word_log_number += 1
-                            return_load_message("Found non-word error " + str(non_word_log_number) + ": " + p["token"])
+                            msg = create_error_message("non-word", non_word_log_number, p["token"], p["suggestions"])
+                            return_load_message(msg)
 
         # Save the current text, so that when user make changes, can be detected
         state_mgm_text = text
@@ -185,7 +220,7 @@ def return_position(position):
 
 def return_load_message(message):
     global user_message
-    user_message += message + "<br />"
+    user_message += message + "<br /><br />"
     eel.return_load_message(str(user_message))
 
 # Index.html is where the main UI components are stored

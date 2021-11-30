@@ -23,7 +23,7 @@ h1 {
 
 /* Loader code referred to https://codepen.io/kingfisher13/pen/vKXwNN */
   #loader {
-    height: 100px;
+    height: 300px;
     width: 1000px;
     left: 300px;
     position: relative;
@@ -56,20 +56,19 @@ h1 {
 }
 
 #editor-container, #suggestContainer {
-    position:absolute;
+    /* position:absolute; */
     /* width: 100%; */
     /* height:85%; */
-    left:320px;
+
 }
 
-#editor-container {
-    z-index: 10;
-    top:150px;
+#editor-container, #btn_toolbar {
+    margin-left: 270px;
     margin-right: 100px;
 }
 
 #suggestContainer {
-    top:180px;
+    position:absolute;
 }
 
 #editorMirror {
@@ -145,12 +144,6 @@ h1 {
     background-color: black;
     color: white;
   }
-
-#check_button {
-  position: absolute;
-  right: 100px;
-  top: 120px
-}
 
 .quill-mention {
   background-color: lightgreen;
