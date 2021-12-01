@@ -40,16 +40,20 @@
                         <button id="check_button">Check spelling</button>
                         <br />
                         <br />
-                        <label for="wordNum">Number of words:</label>
+                        <label for="wordNum">Minimum number of words:</label>
                         <input type="number" step="1" min="10" max="450" id="wordNum" name="wordNum" value="50" />
                         <label for="seedNum">Seed:</label>
                         <input type="number" step="1" value="999" id="seedNum" name="seedNum" />
                         <label for="nwNum">Probability of non-words:</label>
                         <input type="number" step="1" min="10" max="50" value="10" id="nwNum" name="nwNum" />
                         <button id="sample-btn">Generate sample text</button>
+                        <input type="checkbox" id="pyenchant" name="pyenchant">
+                        <label for="pyenchant">Compare with PyEnchant</label>
                         <hr />
                     </div>
-                    
+                    <div id="test_result">
+
+                    </div>
                     <br />
                     <!-- Text edit area -->
                     <div id="editor-container"></div>

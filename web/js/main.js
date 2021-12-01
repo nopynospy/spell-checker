@@ -274,6 +274,8 @@ let wordNum = document.getElementById('wordNum');
 let seedNum = document.getElementById('seedNum');
 let nwNum = document.getElementById('nwNum');
 let sampleBtn = document.getElementById('sample-btn');
+let enchantCheck = document.getElementById('pyenchant');
+// let enchantBtn = document.getElementById('enchant-btn');
 
 let corpus_words = [];
 
@@ -304,20 +306,30 @@ editorContainer.addEventListener("paste", ()=>{
   checkButton.disabled = true;
 });
 
+function get_stripped_text() {
+  let stripped_text = quill.root.innerText.replace(/(\r\n|\r|\n){2,}/g, '$1\n')
+  return stripped_text.replace(/ +(?= )/g,'');
+}
+
 checkButton.addEventListener("click", ()=>{
   loader.style.display = "flex";
   checkButton.disabled = true;
   quill.disable();
-  let stripped_text = quill.root.innerText.replace(/(\r\n|\r|\n){2,}/g, '$1\n')
-  stripped_text = stripped_text.replace(/ +(?= )/g,'');
-  eel.get_user_text(stripped_text);
+  eel.get_user_text(get_stripped_text(), 0);
   suggestArea1.style.opacity = 0;
   quill.setText(stripped_text);
 });
 
 sampleBtn.addEventListener("click", ()=>{
   eel.generate_sample(wordNum.value, seedNum.value, nwNum.value);
+  loader.style.display = "flex";
 });
+
+// enchantBtn.addEventListener("click", ()=>{
+//   let stripped_text = quill.root.innerText.replace(/(\r\n|\r|\n){2,}/g, '$1\n')
+//   stripped_text = stripped_text.replace(/ +(?= )/g,'');
+//   eel.run_py_enchant(stripped_text);
+// });
 
 eel.expose(return_sample);
 function return_sample(sample) {
@@ -407,9 +419,7 @@ quill.on('editor-change', function(eventName, range, oldRange) {
             count_words(quill.getText());
             if (hasPasted) {
               quill.disable();
-              let stripped_text = quill.root.innerText.replace(/(\r\n|\r|\n){2,}/g, '$1\n')
-              stripped_text = stripped_text.replace(/ +(?= )/g,'');
-              eel.get_user_text(stripped_text);
+              eel.get_user_text(get_stripped_text(), 0);
               suggestArea1.style.opacity = 0;
               hasPasted = false
             }

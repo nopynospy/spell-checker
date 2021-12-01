@@ -11,6 +11,9 @@ from nltk import edit_distance, TweetTokenizer, ngrams
 import eng_to_ipa as eng_to_ipa
 import re
 
+import enchant
+from sklearn.metrics import classification_report
+
 load_dotenv()
 ENDPOINT = os.getenv('HEADER') +  os.getenv('GUEST_ID') + ":" +os.getenv('GUEST_PW') +  os.getenv('ENDPOINT')
 
@@ -46,6 +49,8 @@ curr_bigrams = []
 
 user_message = ""
 
+ENCHANT = enchant.Dict("en_US")
+
 # Get web page files from web folder
 eel.init('web')
 
@@ -53,9 +58,18 @@ eel.init('web')
 def get_all_words():
     eel.return_all_words(sorted(CORPUS_WORDS))
 
-def get_similar_words(word, dist1=2, dist2=2): 
+# https://stackoverflow.com/questions/44883905/randomly-remove-x-elements-from-a-list
+def delete_rand_items(items,n, seed):
+    random.seed(seed)
+    n = int(len(items) * (n/100))
+    to_delete = set(random.sample(range(len(items)),n))
+    return [x for i,x in enumerate(items) if not i in to_delete]
+
+def get_similar_words(word, dist1=2, dist2=2, seed=999, drop=0): 
     similar_words = []
     corpus = UNIGRAMS
+    if drop > 0:
+        corpus = delete_rand_items(corpus, drop, seed)
     # Remove trailing whitespaces
     word = word.strip()
     ipa = eng_to_ipa.convert(word)
@@ -107,8 +121,8 @@ def get_word_errors(bigram):
                 suggestions.append(entry)
         return suggestions
 
-def create_error_message(kind, num, cause, suggestion):
-    return "Found "+ kind +" error " + str(num) + ": " + cause + "<br />Suggestions: " + ", ".join([item['word'] for item in suggestion])
+def create_error_message(line, kind, num, cause, suggestion):
+    return "Line " + str(line) + ": Found "+ kind +" error " + str(num) + ": " + cause + "<br />Suggestions: " + ", ".join([item['word'] for item in suggestion])
 
 def in_dictlist(key, value, my_dictlist):
     for entry in my_dictlist:
@@ -116,8 +130,39 @@ def in_dictlist(key, value, my_dictlist):
             return entry
     return {}
 
+def get_line_number(text, number):
+    text = text[:number]
+    return text.count("\n") + 1
+
+def preprocess_input(text):
+    text = re.sub("([0-9]+ [0])+", "4", text)
+    text = text.replace(u'\ufeff', ' ')
+    return tknzr.tokenize(text)
+
 @eel.expose
-def get_user_text(text):
+def run_py_enchant(text, tokens, actual):
+    pred = []
+    text = re.sub("([0-9]+ [0])+", "4", text)
+    text = text.replace(u'\ufeff', ' ')
+    for t in tokens:
+        if t[0].isalpha():
+            if ENCHANT.check(t) == False:
+                print(t)
+                suggestions = ENCHANT.suggest(t)
+                suggestions = '<b>'+ t +' [' + (','.join(suggestions)) + ']</b>'
+                text = text.replace(t, suggestions)
+                pred.append(1)
+            else:
+                pred.append(0)
+        else:
+            pred.append(0)
+
+    target_names = ['real word', 'non-word']
+    print(classification_report(actual, pred, target_names=target_names))
+
+@eel.expose
+def get_user_text(text, isTest):
+    print(isTest)
     global state_mgm_text, state_mgm_tokens, state_mgm_bigrams, state_mgm_positions, user_message
     user_message = ""
     # Posistions contain a list of all tokens in user text and their starting position
@@ -126,14 +171,13 @@ def get_user_text(text):
     searchPosition = 0
     # If the current text has changed
     if text != state_mgm_text:
-        text = re.sub("([0-9]+ [0])+", "4", text)
-        text = text.replace(u'\ufeff', ' ')
         return_load_message("Receiving user input text")
         # Tokenize user input text with nltk
-        curr_tokens = tknzr.tokenize(text)
+        curr_tokens = preprocess_input(text)
         for c in curr_tokens:
             # Get the token and its position
             entry = {"token": c, "start": text.find(c, searchPosition)}
+            entry["line"] = get_line_number(text, int(entry["start"]))
             positions.append(entry)
             # Update search index, so that next iteration searches after this word
             searchPosition += len(c)
@@ -184,7 +228,7 @@ def get_user_text(text):
                                 positions[i+1]["id"] =  str(uuid.uuid4())
                                 return_position(positions[i+1])
                                 bigram_log_number += 1
-                                msg = create_error_message("real word", bigram_log_number, b[1], real_word_suggestions)
+                                msg = create_error_message(positions[i]["line"], "real word", bigram_log_number, b[1], real_word_suggestions)
                                 return_load_message(msg)
                         except Exception as e:
                             pass
@@ -203,7 +247,7 @@ def get_user_text(text):
                             p["type"] = "nonword"
                             p["id"] =  str(uuid.uuid4())
                             non_word_log_number += 1
-                            msg = create_error_message("non-word", non_word_log_number, p["token"], p["suggestions"])
+                            msg = create_error_message(p["line"], "non-word", non_word_log_number, p["token"], p["suggestions"])
                             return_load_message(msg)
 
         # Save the current text, so that when user make changes, can be detected
@@ -211,7 +255,7 @@ def get_user_text(text):
         state_mgm_tokens = curr_tokens
         state_mgm_bigrams = curr_bigrams
         state_mgm_positions = positions
-        print(positions)
+        # print(positions)
         eel.return_suggestions(positions)
 
 def return_suggestions(positions):
@@ -238,8 +282,11 @@ def validate_input_num(input):
     output = re.sub("[^0-9]", "", input)
     return int(output)
 
+def evaluate_lists(pred, actual):
+    return sum(1 for x,y in zip(pred,actual) if x == y) / len(pred)
+
 @eel.expose
-def generate_sample(length, seed, nw):
+def generate_sample(length=50, seed=999, nw=10):
     # in case user added decimal places in input boxes
     seed = validate_input_num(seed)
     length = validate_input_num(length)
@@ -268,20 +315,24 @@ def generate_sample(length, seed, nw):
     result = result.strip()
 
     # https://stackoverflow.com/questions/51079986/generate-misspelled-words-typos
-    new_result = []
-    words = result.split(' ')
-    for word in words:
+    actual = []
+    all_tokens = preprocess_input(result)
+
+    for t in all_tokens:
         outcome = random.random()
-        if outcome <= nw/100:
-            ix = random.choice(range(len(word)))
-            new_word = ''.join([word[w] if w != ix else random.choice(string.ascii_letters) for w in range(len(word))])
-            new_result.append(new_word)
+        if outcome <= nw/100 and len(t) > 1:
+            ix = random.choice(range(len(t)))
+            new_t = ''.join([t[w] if w != ix else random.choice(string.ascii_letters) for w in range(len(t))])
+            result = result.replace(t, new_t)
+            actual.append(1)
         else:
-            new_result.append(word)
+            actual.append(0)
 
-    new_result = ' '.join([w for w in new_result])
+    all_tokens = preprocess_input(result)
+    eel.return_sample(result)
 
-    eel.return_sample(new_result)
+    get_user_text(result, 1)
+    run_py_enchant(result, all_tokens, actual)
 
 
 # Index.html is where the main UI components are stored

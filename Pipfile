@@ -16,6 +16,8 @@ bioc = "*"
 eel = "*"
 country-list = "*"
 eng-to-ipa = "*"
+pyenchant = "*"
+sklearn = "*"
 
 [dev-packages]
 
