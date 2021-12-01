@@ -47,12 +47,7 @@
                         <label for="nwNum">Probability of non-words:</label>
                         <input type="number" step="1" min="10" max="50" value="10" id="nwNum" name="nwNum" />
                         <button id="sample-btn">Generate sample text</button>
-                        <input type="checkbox" id="pyenchant" name="pyenchant">
-                        <label for="pyenchant">Compare with PyEnchant</label>
                         <hr />
-                    </div>
-                    <div id="test_result">
-
                     </div>
                     <br />
                     <!-- Text edit area -->
@@ -60,6 +55,13 @@
                     <!-- Text suggestion area, which will move according to user action -->
                     <div id="suggestContainer">
                         <div class="suggestArea" id="suggestArea1" draggable="true">No suggestion</div>
+                    </div>
+                    <br />
+                    <div id="pyenchant">
+                        <h2>Result compared to PyEnchant</h2>
+                        <pre id="pyenchant_report"></pre>
+                        <br />
+                        <div id="pyenchant_result"></div>
                     </div>
                 </div>
             </div>

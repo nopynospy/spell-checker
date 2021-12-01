@@ -23,13 +23,16 @@ h1 {
 
 /* Loader code referred to https://codepen.io/kingfisher13/pen/vKXwNN */
   #loader {
-    height: 300px;
-    width: 1000px;
-    left: 300px;
-    position: relative;
-    display: none;
     overflow: scroll;
     background-color: rgb(206, 206, 206);
+  }
+
+  #pyenchant, #loader {
+    left: 300px;
+    position: relative;
+    height: 300px;
+    width: 1000px;
+    display: none;
   }
   
   #loader-wheel {
@@ -147,6 +150,18 @@ h1 {
     color: white;
   }
 
-.quill-mention {
+/* .quill-mention {
   background-color: lightgreen;
+} */
+
+.nonword {
+  background-color: rgb(212, 134, 134);
 }
+
+.realword {
+  background-color: rgb(205, 221, 148);
+}
+
+/* #pyenchant_result, #pyenchant_report {
+  display: none;
+} */

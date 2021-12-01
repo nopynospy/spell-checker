@@ -22,12 +22,13 @@ class MentionBlot extends Base {
     node.setAttribute('data-id', data.id);
     node.setAttribute('id', data.uuid);
     node.setAttribute('data-start', data.start);
+    node.classList.add(data.type);
     return node;
   }
 
   static value(domNode) {
-    const { name, id, uuid, start } = domNode.dataset;
-    return { name, id, uuid, start };
+    const { name, id, uuid, start, type } = domNode.dataset;
+    return { name, id, uuid, start, type };
   }
 
   constructor(domNode, value) {
@@ -36,12 +37,7 @@ class MentionBlot extends Base {
     this._removedBlot = false;
   }
 
-  // eslint-disable-next-line no-unused-vars
   index(node, offset) {
-    // See leaf definition as reference:
-    // https://github.com/quilljs/parchment/blob/master/src/blot/abstract/leaf.ts
-    // NOTE: sometimes `node` contains the actual dom node and sometimes just
-    // the text
     return 1;
   }
 
@@ -51,17 +47,6 @@ class MentionBlot extends Base {
    * @param { String } text the text to replace the mention with.
    */
   _replaceBlotWithText(text) {
-    // The steps to replace the Blot with its text must be in this order:
-    // 1. insert text - source:API
-    //    using API we won't react to changes
-    // 2. set selection - source:API
-    //    set the cursor position in place
-    // 3. remove blot - source:USER
-    //    using USER we react to the text-change event and it "looks" like we
-    //    did a blot->text replacement in one step.
-    //
-    // If we don't do these actions in the specified order, the text update and
-    // the cursor position won't be as it should for the autocompletion list.
 
     if (this._removedBlot) return;
     this._removedBlot = true;
@@ -74,8 +59,6 @@ class MentionBlot extends Base {
     quill.setSelection(realPosition - 1, Quill.sources.API);
     quill.deleteText(cursorPosition + text.length - 1, 1, Quill.sources.USER);
 
-    // We use API+USER to be able to hook just USER from the outside and the
-    // content edit will look like is done in "one action".
   }
 
   changeText(oldText, newText) {
@@ -86,9 +69,6 @@ class MentionBlot extends Base {
 
     let cursorPosition = quill.getSelection().index;
     if (cursorPosition == -1) {
-      // This case was found just a couple of times and it may not appear again
-      // due to improvements made on the MentionBlot. I'm leaving the fix here
-      // in case that happens again to debug it.
       cursorPosition = 1;
       console.warning("[changeText] cursorPosition was -1 ... changed to 1");
     }
@@ -99,16 +79,10 @@ class MentionBlot extends Base {
     if (!this._removedBlot) {
       realPosition += blotCursorPosition;
     } else {
-      // Right after the blot is removed we may need to handle a Mutation.
-      // If that's the case, considering that the length of the text is 1 would
-      // be wrong since it no longer is an Embed but a text.
       console.warning("[changeText] removedBlot is set!");
     }
 
     if (newText.startsWith(name) && oldText == name) { // append
-      // An append happens as follows:
-      // Text: <@Name|> -> <@NameX|>
-      // We need to move the inserted letter X outside the blot.
       const extra = newText.substr(name.length);
 
       this.domNode.innerHTML = name;
@@ -121,24 +95,9 @@ class MentionBlot extends Base {
 
       return;
     } else if (newText.endsWith(name) && oldText == name) { // prepend
-      // A prepend may be handled in two different ways depending on the
-      // browser and the text/cursor state.
-      //
-      // Case A: (not a problem)
-      // Text: |<@Name> -> X|<@Name>
-      // Case B: (problem)
-      // Text: <|@Name> -> <X|@Name>
-      //
-      // If we reach this point, it means that we need to tackle Case B.
-      // We need to move the inserted letter X outside the blot.
       const end = newText.length - name.length;
       const extra = newText.substr(0, end);
 
-      // The cursor position is set right after the inserted character.
-      // In some cases the cursor position gets updated before the text-edit
-      // event is emited and in some cases afterwards.
-      // This difference manifests itself when the Blot is at the beginning and
-      // this conditional assignment handles the issue.
       const pos = cursorPosition > 0 ? cursorPosition - 1 : cursorPosition;
 
       this.domNode.innerHTML = name;
@@ -149,19 +108,10 @@ class MentionBlot extends Base {
 
       return;
     }
-    // no append, no prepend, text has changed in a different way.
-
-    // We need to trigger these changes right after the update callback
-    // finishes, otherwise errors may appear due to ranges not updating
-    // correctly.
-    // See: https://github.com/quilljs/quill/issues/1134
     setTimeout(() => this._replaceBlotWithText(newText), 0)
   }
 
   update(mutations) {
-    // See as reference:
-    // https://github.com/quilljs/quill/blob/develop/blots/cursor.js
-
     mutations
       .filter(mutation => mutation.type == 'characterData')
       .forEach(m => {
@@ -170,7 +120,6 @@ class MentionBlot extends Base {
         this.changeText(oldText, newText);
       });
 
-    // I'm not sure whether this is needed or not, keeping it just in case.
     super.update(mutations.filter(mutation => mutation.type != 'characterData'));
   }
 
@@ -179,9 +128,6 @@ class MentionBlot extends Base {
 MentionBlot.blotName = 'mention';
 MentionBlot.className = 'quill-mention';
 MentionBlot.tagName = 'button';
-// MentionBlot.onclick = console.log("CLICK MENTION");
-
-/* } end of MentionBlot definition, mention.js */
 
 Quill.register({
   'formats/mention': MentionBlot
@@ -190,16 +136,17 @@ Quill.register({
 const insertMention = (data, position) => {
 
   quill.insertEmbed(position, 'mention', data, Quill.sources.API);
-  quill.insertText(position + 1, ' ', Quill.sources.API);
+  quill.insertText(position, ' ', Quill.sources.API);
   quill.setSelection(position + 2, Quill.sources.API);
 }
 
-const addMention = (text, suggestions, uuid, position) => {
+const addMention = (text, suggestions, uuid, position, type) => {
   const data = {
     name: text,
     id: suggestions,
     uuid: uuid,
-    start: position
+    start: position,
+    type: type
   };
   
   insertMention(data, position);
@@ -264,7 +211,8 @@ let editorContainer = document.getElementById('editor-container');
 let suggestContainer = document.getElementById("suggestContainer");
 let editorMirror = document.getElementById("editorMirror");
 let suggestArea1 = document.getElementById("suggestArea1");
-// let suggestArea2 = document.getElementById("suggestArea2");
+let clearBtn = document.getElementById("clearBtn")
+let txtBtn = document.getElementById("txtBtn")
 let dictionaryList = document.getElementById('dictionaryList');
 let searchInput = document.getElementById('searchInput');
 let loader = document.getElementById('loader');
@@ -274,7 +222,9 @@ let wordNum = document.getElementById('wordNum');
 let seedNum = document.getElementById('seedNum');
 let nwNum = document.getElementById('nwNum');
 let sampleBtn = document.getElementById('sample-btn');
-let enchantCheck = document.getElementById('pyenchant');
+let pyenchant = document.getElementById('pyenchant');
+let enchantRes = document.getElementById('pyenchant_result');
+let enchantRep = document.getElementById('pyenchant_report');
 // let enchantBtn = document.getElementById('enchant-btn');
 
 let corpus_words = [];
@@ -303,8 +253,24 @@ suggestContainer.style.width = rightBodyWidth + "px"
 editorContainer.addEventListener("paste", ()=>{
   hasPasted = true;
   loader.style.display = "flex";
-  checkButton.disabled = true;
+  disableButtons();
 });
+
+function disableButtons(bool=true) {
+  if (bool) {
+    checkButton.disabled = true;
+    sampleBtn.disabled = true;
+    clearBtn.disabled = true;
+    txtBtn.disabled = true;
+    // quill.disable();
+  } else {
+    checkButton.disabled = false;
+    sampleBtn.disabled = false;
+    clearBtn.disabled = false;
+    txtBtn.disabled = false;
+    // quill.disable();
+  }
+}
 
 function get_stripped_text() {
   let stripped_text = quill.root.innerText.replace(/(\r\n|\r|\n){2,}/g, '$1\n')
@@ -313,9 +279,10 @@ function get_stripped_text() {
 
 checkButton.addEventListener("click", ()=>{
   loader.style.display = "flex";
-  checkButton.disabled = true;
-  quill.disable();
+  disableButtons();
+  // quill.disable();
   eel.get_user_text(get_stripped_text(), 0);
+  pyenchant.style.display = "none";
   suggestArea1.style.opacity = 0;
   quill.setText(stripped_text);
 });
@@ -323,18 +290,26 @@ checkButton.addEventListener("click", ()=>{
 sampleBtn.addEventListener("click", ()=>{
   eel.generate_sample(wordNum.value, seedNum.value, nwNum.value);
   loader.style.display = "flex";
+  pyenchant.style.display = "none";
+  disableButtons();
 });
-
-// enchantBtn.addEventListener("click", ()=>{
-//   let stripped_text = quill.root.innerText.replace(/(\r\n|\r|\n){2,}/g, '$1\n')
-//   stripped_text = stripped_text.replace(/ +(?= )/g,'');
-//   eel.run_py_enchant(stripped_text);
-// });
 
 eel.expose(return_sample);
 function return_sample(sample) {
   quill.setText(sample);
   count_words(quill.getText());
+}
+
+eel.expose(return_enchant);
+function return_enchant(text) {
+  enchantRes.innerHTML = text;
+  pyenchant.style.display = "block";
+}
+
+eel.expose(return_report);
+function return_report(rep) {
+  enchantRep.innerText = rep;
+  pyenchant.style.display = "block";
 }
 
 // Return all words from corpus
@@ -358,6 +333,7 @@ function return_suggestion(position) {
     if (position["type"] == "nonword") {
       quill.formatText(position["start"], position["token"].length, {
         'bold': true,
+        'underline': true
       });
     } else {
       quill.formatText(position["start"], position["token"].length, {
@@ -379,7 +355,8 @@ function return_suggestions(positions) {
       addMention(suggestions[i]["token"],
                  JSON.stringify(suggestions[i]["suggestions"]),
                  suggestions[i]["id"],
-                 suggestions[i]["start"] + suggestions[i]["token"].length) ;
+                 suggestions[i]["start"] + suggestions[i]["token"].length,
+                 suggestions[i]["type"]) ;
       quill.deleteText(suggestions[i]["start"], suggestions[i]["token"].length); 
     }
   }
@@ -388,8 +365,14 @@ function return_suggestions(positions) {
   var mention_click = function(event) {
     var attribute = this.getAttribute("data-id");
     // https://codepen.io/rm89/pen/aNOmzQ
-    var xPosition = event.pageX - editorContainer.getBoundingClientRect().left - (suggestArea1.clientWidth / 3);
-    var yPosition = event.pageY - editorContainer.getBoundingClientRect().top - (suggestArea1.clientHeight / 3);
+    var xPosition = event.clientX - editorContainer.getBoundingClientRect().left - (suggestArea1.clientWidth);
+    var yPosition = event.clientY - editorContainer.getBoundingClientRect().top - (suggestArea1.clientHeight);
+    if(xPosition < 0){
+      xPosition = 0;
+    }
+    if (yPosition + 200 > screen.height) {
+      yPosition = screen.height - 200;
+    }
     generate_buttons(xPosition, yPosition, attribute, this.id, this.getAttribute("data-start"))
   };
   
@@ -397,8 +380,8 @@ function return_suggestions(positions) {
       elements[i].addEventListener('click', mention_click, false);
   }
   loader.style.display = "none";
-  checkButton.disabled = false;
-  quill.enable();
+  disableButtons(false);
+  // quill.enable();
 }
 
 eel.expose(return_load_message);
@@ -418,9 +401,11 @@ quill.on('editor-change', function(eventName, range, oldRange) {
           if (quill.getText() !== oldText) {
             count_words(quill.getText());
             if (hasPasted) {
-              quill.disable();
+              // quill.disable();
+              disableButtons();
               eel.get_user_text(get_stripped_text(), 0);
               suggestArea1.style.opacity = 0;
+              pyenchant.style.display = "none";
               hasPasted = false
             }
           }
@@ -461,7 +446,7 @@ function updateInnerText(ele, text) {
 }
 
 // Allow user to clear textarea text with the clear button
-document.getElementById("clearBtn").addEventListener("click", ()=>{
+clearBtn.addEventListener("click", ()=>{
   updateInnerText("wordnum", 0);
   updateMirror();
   quill.setText('');
@@ -469,7 +454,7 @@ document.getElementById("clearBtn").addEventListener("click", ()=>{
 });
 
 // Allow user to download textarea text as a .txt file using the download button
-document.getElementById("txtBtn").addEventListener("click", ()=>{
+txtBtn.addEventListener("click", ()=>{
   var link = document.createElement('a');
   link.href = 'data:text/plain;charset=UTF-8,' + escape(quill.getText());
   link.download = 'output.txt';
@@ -505,9 +490,11 @@ function generate_buttons(x, y, candidates, parentId, parentStart) {
       let new_btn = document.createElement("button");
       new_btn.innerText = candidates[i]["word"]  + "\n" + candidates[i]["stats"];
       new_btn.className = "suggestions";
-      // new_btn.classList.add('class-1');
+      var att = document.createAttribute("value");
+      att.value = candidates[i]["word"];
+      new_btn.setAttributeNode(att);
       new_btn.onclick = function(){
-        document.getElementById(parentId).innerText = this.innerText;
+        document.getElementById(parentId).innerText = this.value;
         suggestArea1.style.opacity = 0; 
       };
       suggestArea1.appendChild(new_btn);

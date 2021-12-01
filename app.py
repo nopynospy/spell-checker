@@ -50,6 +50,7 @@ curr_bigrams = []
 user_message = ""
 
 ENCHANT = enchant.Dict("en_US")
+CLASS_NAMES = ['real word', 'non-word']
 
 # Get web page files from web folder
 eel.init('web')
@@ -58,18 +59,9 @@ eel.init('web')
 def get_all_words():
     eel.return_all_words(sorted(CORPUS_WORDS))
 
-# https://stackoverflow.com/questions/44883905/randomly-remove-x-elements-from-a-list
-def delete_rand_items(items,n, seed):
-    random.seed(seed)
-    n = int(len(items) * (n/100))
-    to_delete = set(random.sample(range(len(items)),n))
-    return [x for i,x in enumerate(items) if not i in to_delete]
-
-def get_similar_words(word, dist1=2, dist2=2, seed=999, drop=0): 
+def get_similar_words(word, dist1=2, dist2=2): 
     similar_words = []
     corpus = UNIGRAMS
-    if drop > 0:
-        corpus = delete_rand_items(corpus, drop, seed)
     # Remove trailing whitespaces
     word = word.strip()
     ipa = eng_to_ipa.convert(word)
@@ -139,29 +131,32 @@ def preprocess_input(text):
     text = text.replace(u'\ufeff', ' ')
     return tknzr.tokenize(text)
 
-@eel.expose
 def run_py_enchant(text, tokens, actual):
     pred = []
-    text = re.sub("([0-9]+ [0])+", "4", text)
-    text = text.replace(u'\ufeff', ' ')
+    if actual != 1:
+        text = re.sub("([0-9]+ [0])+", "4", text)
+        text = text.replace(u'\ufeff', ' ')
+    replaced = []
     for t in tokens:
-        if t[0].isalpha():
+        if t[0].isalpha() and t not in replaced:
             if ENCHANT.check(t) == False:
-                print(t)
                 suggestions = ENCHANT.suggest(t)
-                suggestions = '<b>'+ t +' [' + (','.join(suggestions)) + ']</b>'
+                suggestions = '<b>'+ t +' [' + (', '.join(suggestions)) + ']</b>'
                 text = text.replace(t, suggestions)
                 pred.append(1)
+                replaced.append(t)
             else:
                 pred.append(0)
         else:
             pred.append(0)
-
-    target_names = ['real word', 'non-word']
-    print(classification_report(actual, pred, target_names=target_names))
-
+            
+    text = text.replace("\n", "<br />")
+    report = classification_report(actual, pred, target_names=CLASS_NAMES)
+    eel.return_enchant(text)
+    eel.return_report(report)
+    
 @eel.expose
-def get_user_text(text, isTest):
+def get_user_text(text, isTest, tokens = []):
     print(isTest)
     global state_mgm_text, state_mgm_tokens, state_mgm_bigrams, state_mgm_positions, user_message
     user_message = ""
@@ -173,7 +168,10 @@ def get_user_text(text, isTest):
     if text != state_mgm_text:
         return_load_message("Receiving user input text")
         # Tokenize user input text with nltk
-        curr_tokens = preprocess_input(text)
+        if len(tokens) > 0:
+            curr_tokens = tokens
+        else:
+            curr_tokens = preprocess_input(text)
         for c in curr_tokens:
             # Get the token and its position
             entry = {"token": c, "start": text.find(c, searchPosition)}
@@ -194,8 +192,6 @@ def get_user_text(text, isTest):
                 # Finding if a pair of bigram with suggestion still exist from earlier check
                 try:
                     if state_mgm_positions[o]["token"] == positions[i]["token"] and state_mgm_positions[o+1]["token"] == positions[i+1]["token"] and "suggestions" in list(state_mgm_positions[o+1].keys()):
-                        print(state_mgm_positions[o])
-                        print(state_mgm_positions[o+1])
                         if state_mgm_positions[o+1]["type"] == "realword":
                             positions[i+1]["suggestions"] = state_mgm_positions[o+1]["suggestions"]
                             positions[i+1]["type"] = state_mgm_positions[o+1]["type"]
@@ -255,7 +251,7 @@ def get_user_text(text, isTest):
         state_mgm_tokens = curr_tokens
         state_mgm_bigrams = curr_bigrams
         state_mgm_positions = positions
-        # print(positions)
+        print(positions)
         eel.return_suggestions(positions)
 
 def return_suggestions(positions):
@@ -314,6 +310,9 @@ def generate_sample(length=50, seed=999, nw=10):
 
     result = result.strip()
 
+    result = re.sub("([0-9]+ [0])+", "4", result)
+    result = result.replace(u'\ufeff', ' ')
+
     # https://stackoverflow.com/questions/51079986/generate-misspelled-words-typos
     actual = []
     all_tokens = preprocess_input(result)
@@ -331,7 +330,7 @@ def generate_sample(length=50, seed=999, nw=10):
     all_tokens = preprocess_input(result)
     eel.return_sample(result)
 
-    get_user_text(result, 1)
+    get_user_text(result, 1, all_tokens)
     run_py_enchant(result, all_tokens, actual)
 
 
