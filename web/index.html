@@ -34,6 +34,7 @@
             <div id="right_body">
                 <div id="overlay-container">
                     <div id="btn_toolbar">
+                        <!-- These are buttons and text input fields for the user -->
                         <span><span id="wordnum">0</span>/500 words</span>
                         <button id="txtBtn">Save as text file</button>
                         <button id="clearBtn">Clear text</button>
@@ -46,9 +47,14 @@
                         <input type="number" step="1" value="999" id="seedNum" name="seedNum" />
                         <label for="nwNum">Probability of non-words:</label>
                         <input type="number" step="1" min="10" max="50" value="10" id="nwNum" name="nwNum" />
+                        <label for="ttSplit">Test ratio</label>
+                        <input type="number" step="1" min="20" max="50" value="20" id="ttSplit" name="ttSplit" />
                         <button id="sample-btn">Generate sample text</button>
                         <hr />
                     </div>
+                    <br />
+                    <!-- This is where phrases will be shown -->
+                    <div id="phrasesArea"></div>
                     <br />
                     <!-- Text edit area -->
                     <div id="editor-container"></div>
@@ -57,11 +63,20 @@
                         <div class="suggestArea" id="suggestArea1" draggable="true">No suggestion</div>
                     </div>
                     <br />
-                    <div id="pyenchant">
-                        <h2>Result compared to PyEnchant</h2>
-                        <pre id="pyenchant_report"></pre>
-                        <br />
-                        <div id="pyenchant_result"></div>
+                    <!-- This is where classification results will be shown -->
+                    <div id="classification">
+                        <div id="prediction">
+                            <h2>Spellchecker result</h2>
+                            <pre id="pred_report"></pre>
+                            <br />
+                            <pre id="pred_result"></pre>
+                        </div>
+                        <div id="pyenchant">
+                            <h2>PyEnchant result</h2>
+                            <pre id="pyenchant_report"></pre>
+                            <br />
+                            <pre id="pyenchant_result"></pre>
+                        </div>
                     </div>
                 </div>
             </div>

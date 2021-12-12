@@ -6,3 +6,8 @@ bigramv2.ipynb
 test_db_readonly.py
 test_diff.py
 db-create.py
+detect_phrase.py
+build
+dist
+app.spec
+sort_stats.py
