@@ -4,6 +4,8 @@ This project is for my Natural Language Processing module, where I built a spell
 
 We used allrecipes.com as our corpus to build the system.
 
+A web app version is available at https://www.nopynospy.cc/n_gram_spellchecker
+
 1. To install all the packages to run the exe:
 
     pip install -r requirements.txt
